@@ -3,49 +3,236 @@
 <head>
   <meta charset="UTF-8">
   <title>Flappy Ball 🏐</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #70c5ce;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #fff;
+      border: 2px solid #000;
+      position: relative;
+      z-index: 1;
+    }
+
+    #startScreen, #gameOverScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(255, 255, 255, 0.95);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      display: none;
+    }
+
+    #startScreen input {
+      padding: 10px;
+      font-size: 18px;
+      margin: 10px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #218838;
+    }
+  </style>
 </head>
 <body>
-  <canvas id="gameCanvas" width="360" height="480"></canvas>
 
-  <!-- شاشة البداية -->
-  <div id="startScreen">
-    <h1>Flappy Ball 🏐</h1>
-    <label>اسم اللاعب:</label>
-    <input type="text" id="playerName" placeholder="أدخل اسمك"><br><br>
+<canvas id="gameCanvas" width="360" height="480"></canvas>
 
-    <label>اختر الصعوبة:</label>
-    <select id="difficulty">
-      <option value="easy">سهل</option>
-      <option value="medium">متوسط</option>
-      <option value="hard">صعب</option>
-    </select><br><br>
+<!-- واجهة البداية -->
+<div id="startScreen">
+  <h1>Flappy Ball 🏐</h1>
+  <input type="text" id="playerName" placeholder="ادخل اسمك">
+  <button onclick="startGame()">ابدأ اللعبة</button>
+</div>
 
-    <label>اختر الشخصية:</label>
-    <select id="characterSelect"></select><br><br>
+<!-- واجهة النهاية -->
+<div id="gameOverScreen">
+  <h2>انتهت اللعبة 😵</h2>
+  <p>النقاط: <span id="finalScore">0</span></p>
+  <p>أعلى نتيجة: <span id="bestScore">0</span></p>
+  <button onclick="restartGame()">إعادة المحاولة</button>
+</div>
 
-    <p>عملاتك: <span id="coinsCount">0</span> 🪙</p>
+<script>
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
 
-    <button onclick="openShop()">🎨 متجر الشخصيات</button><br><br>
-    <button onclick="startGame()">ابدأ اللعبة</button>
-  </div>
+  const startScreen = document.getElementById("startScreen");
+  const gameOverScreen = document.getElementById("gameOverScreen");
+  const finalScoreDisplay = document.getElementById("finalScore");
+  const bestScoreDisplay = document.getElementById("bestScore");
 
-  <!-- شاشة النهاية -->
-  <div id="gameOverScreen">
-    <h2>انتهت اللعبة 😵</h2>
-    <p>النقاط: <span id="finalScore">0</span></p>
-    <p>أعلى نتيجة: <span id="bestScore">0</span></p>
-    <p>العملات المكتسبة: <span id="earnedCoins">0</span> 🪙</p>
-    <button onclick="restartGame()">🔁 إعادة المحاولة</button>
-  </div>
+  let gameStarted = false;
+  let birdImg = new Image();
+  birdImg.src = "https://png.pngtree.com/png-clipart/20230414/original/pngtree-volleyball-clipart-png-image_9054135.png";
 
-  <!-- متجر الشخصيات -->
-  <div id="shopScreen">
-    <h2>🎨 متجر الشخصيات</h2>
-    <div id="shopCharacters"></div>
-    <button onclick="closeShop()">🔙 رجوع</button>
-  </div>
+  let jumpSound = new Audio("https://www.soundjay.com/button/sounds/button-16.mp3");
+  let hitSound = new Audio("https://www.soundjay.com/button/sounds/button-10.mp3");
 
-  <script src="script.js"></script>
+  let score = 0;
+  let bestScore = localStorage.getItem("bestScore") || 0;
+  let pipes = [];
+  let frame = 0;
+  let pipeSpeed = 2;
+
+  let bird = {
+    x: 60,
+    y: 150,
+    width: 35,
+    height: 35,
+    gravity: 1.5,
+    velocity: 0,
+    jump: -15,
+    draw: function () {
+      ctx.drawImage(birdImg, this.x, this.y, this.width, this.height);
+    },
+    update: function () {
+      this.velocity += this.gravity;
+      this.y += this.velocity;
+      if (this.y + this.height > canvas.height) {
+        endGame();
+      }
+      this.draw();
+    },
+    flap: function () {
+      this.velocity = this.jump;
+      jumpSound.play();
+    }
+  };
+
+  function createPipe() {
+    let topHeight = Math.floor(Math.random() * 200) + 50;
+    pipes.push({
+      x: canvas.width,
+      topHeight: topHeight
+    });
+  }
+
+  function updatePipes() {
+    for (let i = 0; i < pipes.length; i++) {
+      let p = pipes[i];
+      p.x -= pipeSpeed;
+
+      ctx.fillStyle = "green";
+      ctx.fillRect(p.x, 0, 50, p.topHeight);
+      ctx.fillRect(p.x, p.topHeight + 130, 50, canvas.height - p.topHeight - 130);
+
+      // تصادم
+      if (
+        bird.x < p.x + 50 &&
+        bird.x + bird.width > p.x &&
+        (
+          bird.y < p.topHeight ||
+          bird.y + bird.height > p.topHeight + 130
+        )
+      ) {
+        hitSound.play();
+        endGame();
+      }
+
+      if (p.x + 50 === bird.x) {
+        score++;
+        if (score % 5 === 0) pipeSpeed += 0.3;
+      }
+    }
+
+    pipes = pipes.filter(p => p.x + 50 > 0);
+  }
+
+  function drawScore() {
+    ctx.fillStyle = "black";
+    ctx.font = "20px Arial";
+    ctx.fillText("النقاط: " + score, 10, 30);
+  }
+
+  function gameLoop() {
+    if (!gameStarted) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    bird.update();
+
+    if (frame % 90 === 0) createPipe();
+    updatePipes();
+    drawScore();
+
+    frame++;
+    requestAnimationFrame(gameLoop);
+  }
+
+  function startGame() {
+    let name = document.getElementById("playerName").value.trim();
+    if (name === "") {
+      alert("يرجى إدخال اسمك قبل البدء!");
+      return;
+    }
+
+    score = 0;
+    pipes = [];
+    frame = 0;
+    pipeSpeed = 2;
+    bird.y = 150;
+    bird.velocity = 0;
+    gameStarted = true;
+
+    startScreen.style.display = "none";
+    gameOverScreen.style.display = "none";
+    requestAnimationFrame(gameLoop);
+  }
+
+  function endGame() {
+    gameStarted = false;
+    finalScoreDisplay.innerText = score;
+    bestScore = Math.max(bestScore, score);
+    localStorage.setItem("bestScore", bestScore);
+    bestScoreDisplay.innerText = bestScore;
+    gameOverScreen.style.display = "flex";
+  }
+
+  function restartGame() {
+    startGame();
+  }
+
+  document.addEventListener("keydown", e => {
+    if (e.code === "Space" && gameStarted) bird.flap();
+  });
+
+  document.addEventListener("touchstart", () => {
+    if (gameStarted) bird.flap();
+  });
+
+  window.onload = () => {
+    startScreen.style.display = "flex";
+  };
+</script>
+
 </body>
 </html>
