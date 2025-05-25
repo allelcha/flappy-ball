@@ -1,219 +1,151 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Flappy Ball - 3D تصميم احترافي</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Flappy Ball 3D تحسين</title>
   <style>
-    /* RESET */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Tahoma', sans-serif;
+    }
+    body {
+      background: linear-gradient(135deg, #1f1c2c, #928dab);
+      color: #fff;
+      text-align: center;
+      overflow: hidden;
       user-select: none;
     }
-
-    body {
-      background: linear-gradient(135deg, #141e30, #243b55);
-      color: #eee;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
-      perspective: 1200px;
-    }
-
     canvas {
-      background: #0d1b2a;
-      border-radius: 15px;
-      box-shadow: 0 0 20px #00aaff80 inset, 0 15px 35px rgba(0, 170, 255, 0.5);
+      background: linear-gradient(to bottom, #4b6cb7, #182848);
       display: block;
       margin: 20px auto;
-      border: none;
-      transform-style: preserve-3d;
-      transition: transform 0.3s ease;
+      border-radius: 15px;
+      box-shadow:
+        0 0 20px rgba(255,255,255,0.1),
+        inset 0 0 50px rgba(255,255,255,0.1);
+      width: 360px;
+      height: 480px;
+      image-rendering: pixelated;
     }
-    canvas:hover {
-      transform: rotateY(5deg) rotateX(5deg) scale(1.05);
-      box-shadow: 0 0 40px #00c8ffaa inset, 0 25px 50px rgba(0, 200, 255, 0.8);
-    }
-
-    h2 {
-      margin-bottom: 15px;
-      text-shadow: 0 0 10px #00c8ffbb;
-    }
-
-    /* الشاشات (start, gameover, store) */
     .screen {
-      background: rgba(10, 20, 35, 0.85);
-      padding: 30px 40px;
-      border-radius: 20px;
-      box-shadow: 0 0 25px #00aaffcc;
-      max-width: 360px;
-      width: 100%;
-      margin: 0 auto 30px;
-      transform-style: preserve-3d;
-      backface-visibility: hidden;
-      transition: opacity 0.3s ease;
-      font-weight: 600;
       display: none;
+      padding: 20px;
     }
     .screen.active {
       display: block;
-      animation: fadeIn 0.5s ease forwards;
     }
-
-    @keyframes fadeIn {
-      from {opacity: 0; transform: translateY(15px);}
-      to {opacity: 1; transform: translateY(0);}
-    }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 15px;
-      border-radius: 12px;
+    input {
+      padding: 10px;
+      margin: 10px;
+      width: 200px;
+      font-size: 16px;
+      border-radius: 10px;
       border: none;
-      font-size: 18px;
-      font-weight: 600;
-      color: #222;
-      box-shadow: inset 0 0 8px #00aaff66;
+      box-shadow: 0 0 8px #ccc;
+      text-align: center;
+      outline: none;
       transition: box-shadow 0.3s ease;
     }
-    input[type="text"]:focus {
-      outline: none;
-      box-shadow: inset 0 0 15px #00d4ffcc;
+    input:focus {
+      box-shadow: 0 0 12px #4b6cb7;
     }
-
     button {
-      background: linear-gradient(145deg, #00b4ff, #005f99);
-      border: none;
-      padding: 15px 30px;
-      margin: 15px 10px 0 10px;
-      border-radius: 14px;
-      color: #e0f7ff;
-      font-weight: 700;
-      font-size: 17px;
+      padding: 12px 25px;
+      font-size: 18px;
+      margin: 10px;
       cursor: pointer;
-      box-shadow:
-        0 5px 10px #004f7f,
-        inset 0 -3px 7px #00d8ff;
-      transition: all 0.3s ease;
-      user-select: none;
-      transform-style: preserve-3d;
-      position: relative;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(145deg, #6a7bd8, #8ca6db);
+      box-shadow:  6px 6px 12px #5b6bb8,
+                   -6px -6px 12px #7ba1e0;
+      color: #fff;
+      font-weight: bold;
+      transition: background 0.3s ease, box-shadow 0.3s ease;
     }
     button:hover {
-      background: linear-gradient(145deg, #00e0ff, #0085cc);
-      box-shadow:
-        0 8px 20px #00bfff,
-        inset 0 -3px 10px #00f0ff;
-      transform: translateY(-3px) scale(1.05);
-      text-shadow: 0 0 6px #aaffff;
+      background: linear-gradient(145deg, #8ca6db, #6a7bd8);
+      box-shadow:  3px 3px 8px #5b6bb8,
+                   -3px -3px 8px #7ba1e0;
     }
-    button:active {
-      transform: translateY(1px) scale(0.97);
-      box-shadow:
-        0 3px 5px #004260,
-        inset 0 -1px 3px #00a6cc;
+    #coinsDisplay {
+      font-size: 24px;
+      margin-bottom: 10px;
+      text-shadow: 0 0 8px gold;
     }
-
-    #coinsDisplay, #storeCoins {
-      margin-top: 10px;
-      font-size: 20px;
-      color: #00dfff;
-      text-shadow: 0 0 15px #00c8ffbb;
-      font-weight: 700;
-    }
-
     #storeItems {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       gap: 15px;
-      margin-top: 15px;
+      margin-top: 10px;
     }
-
     .store-item {
-      background: linear-gradient(145deg, #122e4a, #0b2342);
-      border-radius: 15px;
-      padding: 12px;
+      background: #324a7e;
+      padding: 15px;
+      border-radius: 12px;
       width: 110px;
-      box-shadow:
-        0 3px 8px rgba(0, 170, 255, 0.4),
-        inset 0 0 10px #004f7f;
-      user-select: none;
-      color: #80dfff;
-      font-weight: 700;
+      box-shadow: inset 2px 2px 5px rgba(255,255,255,0.1),
+                  5px 5px 10px rgba(0,0,0,0.5);
+      color: #e0e0e0;
       text-align: center;
-      transition: transform 0.3s ease;
-      cursor: pointer;
-      position: relative;
-      perspective: 800px;
-    }
-    .store-item:hover {
-      transform: scale(1.1) rotateY(10deg);
-      box-shadow:
-        0 6px 20px #00e0ffcc,
-        inset 0 0 15px #0099cc;
+      user-select: none;
     }
     .store-item img {
-      border-radius: 12px;
       width: 80px;
       height: 80px;
-      box-shadow: 0 0 10px #00cfffcc;
-      user-select: none;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(255,255,255,0.3);
+      margin-bottom: 8px;
+      background: radial-gradient(circle at center, #7a92d6, #2b3b65);
     }
     .store-item button {
-      margin-top: 10px;
+      margin-top: 8px;
       width: 100%;
-      background: linear-gradient(145deg, #007bb8, #004c6b);
-      box-shadow: inset 0 0 5px #00b0ffcc;
-      color: #d0e9ff;
-      font-weight: 700;
-      font-size: 14px;
       padding: 8px 0;
-      border-radius: 10px;
+      font-weight: 600;
+      background: linear-gradient(145deg, #7a92d6, #49639b);
+      box-shadow:  3px 3px 8px #3b5188,
+                   -3px -3px 8px #8797d9;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
       transition: background 0.3s ease;
-      user-select: none;
     }
-    .store-item button:hover {
-      background: linear-gradient(145deg, #00aaff, #006aaf);
-      box-shadow: inset 0 0 15px #00dfffcc;
-      color: #e0f7ff;
+    .store-item button:disabled {
+      background: #555;
+      box-shadow: none;
+      cursor: default;
+      color: #aaa;
     }
-
-    /* نص النقاط والقلوب داخل الكانفس */
-    #gameCanvas + div {
-      margin-top: 10px;
-      color: #00dfff;
-      text-shadow: 0 0 12px #00c8ffbb;
-      font-weight: 700;
+    .store-item button:hover:not(:disabled) {
+      background: linear-gradient(145deg, #49639b, #7a92d6);
     }
-
   </style>
 </head>
 <body>
 
 <canvas id="gameCanvas" width="360" height="480"></canvas>
 
-<div id="startScreen" class="screen active" tabindex="0" aria-label="شاشة البداية">
+<div id="startScreen" class="screen active">
   <h2>مرحبًا بك في Flappy Ball</h2>
-  <input type="text" id="playerName" placeholder="ادخل اسمك" aria-required="true" />
-  <div id="coinsDisplay" aria-live="polite">💰 0</div>
+  <input type="text" id="playerName" placeholder="ادخل اسمك">
+  <div id="coinsDisplay">💰 0</div>
   <button onclick="startGame()">ابدأ اللعبة</button>
   <button onclick="openStore()">المتجر</button>
 </div>
 
-<div id="gameOverScreen" class="screen" tabindex="0" aria-label="شاشة انتهاء اللعبة">
+<div id="gameOverScreen" class="screen">
   <h2>انتهت اللعبة</h2>
   <p>نتيجتك: <span id="finalScore"></span></p>
   <p>أفضل نتيجة: <span id="bestScore"></span></p>
   <button onclick="restartGame()">إعادة</button>
 </div>
 
-<div id="storeScreen" class="screen" tabindex="0" aria-label="شاشة المتجر">
+<div id="storeScreen" class="screen">
   <h2>المتجر</h2>
   <p>💰 <span id="storeCoins">0</span></p>
   <div id="storeItems"></div>
@@ -238,17 +170,17 @@
   let score = 0;
   let bestScore = parseInt(localStorage.getItem("bestScore")) || 0;
   let coins = parseInt(localStorage.getItem("coins")) || 0;
-  let selectedCharacter = 0;
-  let ownedCharacters = JSON.parse(localStorage.getItem("ownedCharacters")) || [0];
+  let ownedCharacters = JSON.parse(localStorage.getItem("ownedCharacters")) || [1];
+  let selectedCharacter = ownedCharacters[0] || 1;
   let pipes = [];
   let frame = 0;
   let pipeSpeed = 2;
   let lives = 5;
 
-  // نستخدم صور pixel art من API
+  // تحميل صور الطيور من API خارجية
   const birdImages = Array.from({length: 20}).map((_, i) => {
     const img = new Image();
-    img.src = `https://api.dicebear.com/7.x/pixel-art/svg?seed=char${i}`;
+    img.src = `https://api.dicebear.com/7.x/pixel-art/svg?seed=char${i+1}`;
     return img;
   });
 
@@ -262,7 +194,7 @@
     height: 40,
     gravity: 1.5,
     velocity: 0,
-    jump: -15,
+    jump: -12,
     draw: function () {
       ctx.drawImage(birdImages[selectedCharacter], this.x, this.y, this.width, this.height);
     },
@@ -289,27 +221,14 @@
       let p = pipes[i];
       p.x -= pipeSpeed;
 
-      // أنابيب بتدرج ألوان يعطي إحساس 3D
-      const gradTop = ctx.createLinearGradient(p.x, 0, p.x + 50, p.topHeight);
-      gradTop.addColorStop(0, '#0f6210');
-      gradTop.addColorStop(1, '#38a82b');
-
-      const gradBottom = ctx.createLinearGradient(p.x, p.topHeight + 120, p.x + 50, canvas.height);
-      gradBottom.addColorStop(0, '#0f6210');
-      gradBottom.addColorStop(1, '#38a82b');
-
-      ctx.fillStyle = gradTop;
-      ctx.fillRect(p.x, 0, 50, p.topHeight);
-
-      ctx.fillStyle = gradBottom;
-      ctx.fillRect(p.x, p.topHeight + 120, 50, canvas.height - p.topHeight - 120);
-
-      // تأثير ظل على الأنابيب
-      ctx.shadowColor = "rgba(0, 100, 0, 0.5)";
+      ctx.fillStyle = "#228B22"; // لون الأنابيب أخضر غامق 3D effect
+      ctx.shadowColor = "rgba(0,0,0,0.7)";
       ctx.shadowBlur = 10;
-      ctx.shadowOffsetX = 2;
-      ctx.shadowOffsetY = 2;
+      ctx.fillRect(p.x, 0, 50, p.topHeight);
+      ctx.fillRect(p.x, p.topHeight + 120, 50, canvas.height - p.topHeight - 120);
+      ctx.shadowBlur = 0;
 
+      // تصادم مع الطائر
       if (
         bird.x < p.x + 50 &&
         bird.x + bird.width > p.x &&
@@ -323,17 +242,12 @@
         i--;
       }
 
+      // زيادة النقاط عندما يمر الطائر من الأنبوب
       if (p.x + 50 === bird.x) {
         score++;
         coins++;
         if (score % 5 === 0) pipeSpeed += 0.3;
       }
-
-      // إعادة تعيين ظل
-      ctx.shadowColor = "transparent";
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 0;
     }
 
     pipes = pipes.filter(p => p.x + 50 > 0);
@@ -346,14 +260,11 @@
   }
 
   function drawScore() {
-    ctx.fillStyle = "#00dfff";
-    ctx.font = "20px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-    ctx.shadowColor = "#00c8ffbb";
-    ctx.shadowBlur = 12;
-    ctx.fillText("النقاط: " + score, 15, 28);
-    ctx.fillText("العملات: " + coins, 15, 58);
-    ctx.fillText("❤️: " + lives, 15, 88);
-    ctx.shadowBlur = 0;
+    ctx.fillStyle = "white";
+    ctx.font = "18px Arial";
+    ctx.fillText("النقاط: " + score, 10, 20);
+    ctx.fillText("العملات: " + coins, 10, 40);
+    ctx.fillText("❤️: " + lives, 10, 60);
   }
 
   function gameLoop() {
@@ -380,8 +291,10 @@
 
   function startGame() {
     const playerName = playerNameInput.value.trim();
-    if (!playerName) return alert("ادخل اسمك أولاً");
-
+    if (!playerName) {
+      alert("ادخل اسمك أولاً");
+      return;
+    }
     score = 0;
     lives = 5;
     pipes = [];
@@ -390,6 +303,7 @@
     bird.y = 150;
     bird.velocity = 0;
     gameStarted = true;
+    selectedCharacter = ownedCharacters[0] || 1;
     switchScreen(null);
     requestAnimationFrame(gameLoop);
   }
@@ -409,79 +323,78 @@
   }
 
   function switchScreen(target) {
-    [startScreen, gameOverScreen, storeScreen].forEach(screen => screen.classList.remove("active"));
+    [startScreen, gameOverScreen, storeScreen].forEach(screen => {
+      screen.classList.remove("active");
+    });
     if (target) target.classList.add("active");
-    updateDisplays();
   }
 
-  function updateDisplays() {
-    coinsDisplay.innerText = `💰 ${coins}`;
-    storeCoins.innerText = coins;
-  }
+  // متجر شخصيات مع عملات
+  const characters = Array.from({length: 20}, (_, i) => ({
+    id: i,
+    name: `شخصية ${i+1}`,
+    price: (i+1)*5,
+    image: `https://api.dicebear.com/7.x/pixel-art/svg?seed=char${i+1}`
+  }));
 
   function openStore() {
+    storeCoins.innerText = coins;
+    storeItems.innerHTML = "";
+    characters.forEach(char => {
+      const owned = ownedCharacters.includes(char.id);
+      const btn = document.createElement("button");
+      btn.innerText = owned ? "مملوك" : `شراء (${char.price} عملة)`;
+      btn.disabled = owned || coins < char.price;
+      btn.onclick = () => buyCharacter(char);
+      const item = document.createElement("div");
+      item.className = "store-item";
+      const img = document.createElement("img");
+      img.src = char.image;
+      item.appendChild(img);
+      item.appendChild(document.createTextNode(char.name));
+      item.appendChild(document.createElement("br"));
+      item.appendChild(btn);
+      storeItems.appendChild(item);
+    });
     switchScreen(storeScreen);
-    renderStoreItems();
+  }
+
+  function buyCharacter(char) {
+    if (coins >= char.price && !ownedCharacters.includes(char.id)) {
+      coins -= char.price;
+      ownedCharacters.push(char.id);
+      localStorage.setItem("ownedCharacters", JSON.stringify(ownedCharacters));
+      localStorage.setItem("coins", coins);
+      openStore();
+    }
   }
 
   function closeStore() {
     switchScreen(startScreen);
   }
 
-  const storeData = [
-    { id: 1, name: "شخصية 1", price: 50, imgIndex: 1 },
-    { id: 2, name: "شخصية 2", price: 100, imgIndex: 2 },
-    { id: 3, name: "شخصية 3", price: 150, imgIndex: 3 },
-    { id: 4, name: "شخصية 4", price: 200, imgIndex: 4 },
-  ];
+  // التحكم بالحركة - إضافة ضغط شاشة
+  window.addEventListener("click", () => {
+    if (gameStarted) bird.flap();
+  });
 
-  function renderStoreItems() {
-    storeItems.innerHTML = "";
-    storeData.forEach(item => {
-      const owned = ownedCharacters.includes(item.id);
-      const div = document.createElement("div");
-      div.className = "store-item";
-      div.innerHTML = `
-        <img src="${birdImages[item.imgIndex].src}" alt="${item.name}" />
-        <div>${item.name}</div>
-        <button ${owned ? "disabled" : ""} data-id="${item.id}" data-price="${item.price}">
-          ${owned ? "مملوك" : `اشتري بـ ${item.price}`}
-        </button>
-      `;
-      storeItems.appendChild(div);
-    });
+  window.addEventListener("touchstart", () => {
+    if (gameStarted) bird.flap();
+  });
 
-    storeItems.querySelectorAll("button").forEach(btn => {
-      btn.addEventListener("click", buyItem);
-    });
-  }
-
-  function buyItem(e) {
-    const btn = e.target;
-    const id = parseInt(btn.dataset.id);
-    const price = parseInt(btn.dataset.price);
-    if (coins >= price) {
-      coins -= price;
-      ownedCharacters.push(id);
-      localStorage.setItem("ownedCharacters", JSON.stringify(ownedCharacters));
-      localStorage.setItem("coins", coins);
-      updateDisplays();
-      renderStoreItems();
-      alert("تم الشراء بنجاح!");
-    } else {
-      alert("لا تملك عملات كافية!");
-    }
-  }
-
-  window.addEventListener("keydown", e => {
-    if (gameStarted && e.code === "Space") {
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "Space" && gameStarted) {
       bird.flap();
     }
   });
 
-  // تحديث العملات والنقاط في البداية
-  updateDisplays();
+  // عند فتح اللعبة نحدث العرض للنقاط والعملة والاسم
+  function updateUI() {
+    coinsDisplay.innerText = `💰 ${coins}`;
+  }
+  updateUI();
 
 </script>
+
 </body>
 </html>
