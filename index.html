@@ -2,127 +2,109 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Flappy Ball 3D تحسين</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Flappy Ball 3D متطورة</title>
   <style>
     * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Tahoma', sans-serif;
+      margin: 0; padding: 0; box-sizing: border-box; font-family: 'Tahoma', sans-serif;
     }
     body {
-      background: linear-gradient(135deg, #1f1c2c, #928dab);
+      background: linear-gradient(135deg, #020111, #3a3a52);
       color: #fff;
       text-align: center;
       overflow: hidden;
       user-select: none;
     }
     canvas {
-      background: linear-gradient(to bottom, #4b6cb7, #182848);
       display: block;
       margin: 20px auto;
+      background: linear-gradient(to bottom, #1e1e2f, #0c0c13);
       border-radius: 15px;
-      box-shadow:
-        0 0 20px rgba(255,255,255,0.1),
-        inset 0 0 50px rgba(255,255,255,0.1);
-      width: 360px;
-      height: 480px;
-      image-rendering: pixelated;
+      box-shadow: 0 0 20px #3af;
+      filter: drop-shadow(0 0 10px #3af);
     }
     .screen {
       display: none;
       padding: 20px;
+      max-width: 360px;
+      margin: 10px auto;
+      background: rgba(0,0,0,0.6);
+      border-radius: 10px;
+      box-shadow: 0 0 15px #3af;
     }
     .screen.active {
       display: block;
     }
-    input {
-      padding: 10px;
-      margin: 10px;
-      width: 200px;
+    input, button {
       font-size: 16px;
-      border-radius: 10px;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
       border: none;
-      box-shadow: 0 0 8px #ccc;
-      text-align: center;
       outline: none;
-      transition: box-shadow 0.3s ease;
+      transition: background-color 0.3s ease;
     }
-    input:focus {
-      box-shadow: 0 0 12px #4b6cb7;
+    input {
+      width: 100%;
+      max-width: 300px;
+      background: #222;
+      color: #eee;
+      text-align: center;
+      box-shadow: inset 0 0 8px #06f;
     }
     button {
-      padding: 12px 25px;
-      font-size: 18px;
-      margin: 10px;
+      background: #06f;
+      color: white;
       cursor: pointer;
-      border: none;
-      border-radius: 12px;
-      background: linear-gradient(145deg, #6a7bd8, #8ca6db);
-      box-shadow:  6px 6px 12px #5b6bb8,
-                   -6px -6px 12px #7ba1e0;
-      color: #fff;
-      font-weight: bold;
-      transition: background 0.3s ease, box-shadow 0.3s ease;
+      width: 150px;
+      box-shadow: 0 0 12px #06f;
     }
     button:hover {
-      background: linear-gradient(145deg, #8ca6db, #6a7bd8);
-      box-shadow:  3px 3px 8px #5b6bb8,
-                   -3px -3px 8px #7ba1e0;
+      background: #38f;
     }
-    #coinsDisplay {
-      font-size: 24px;
-      margin-bottom: 10px;
-      text-shadow: 0 0 8px gold;
+    #coinsDisplay, #storeCoins {
+      font-size: 20px;
+      margin-top: 10px;
+      color: #0ff;
+      text-shadow: 0 0 10px #0ff;
     }
     #storeItems {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 15px;
-      margin-top: 10px;
+      gap: 12px;
+      margin-top: 15px;
     }
     .store-item {
-      background: #324a7e;
-      padding: 15px;
-      border-radius: 12px;
-      width: 110px;
-      box-shadow: inset 2px 2px 5px rgba(255,255,255,0.1),
-                  5px 5px 10px rgba(0,0,0,0.5);
-      color: #e0e0e0;
-      text-align: center;
+      background: #111833;
+      padding: 10px;
+      border-radius: 10px;
+      width: 100px;
+      box-shadow: 0 0 10px #05f inset;
       user-select: none;
+      transition: transform 0.2s ease;
+    }
+    .store-item:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 20px #0ff inset;
     }
     .store-item img {
       width: 80px;
       height: 80px;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(255,255,255,0.3);
-      margin-bottom: 8px;
-      background: radial-gradient(circle at center, #7a92d6, #2b3b65);
+      border-radius: 10px;
+      border: 2px solid #0ff;
+      margin-bottom: 5px;
+      filter: drop-shadow(0 0 6px #0ff);
     }
-    .store-item button {
-      margin-top: 8px;
-      width: 100%;
-      padding: 8px 0;
-      font-weight: 600;
-      background: linear-gradient(145deg, #7a92d6, #49639b);
-      box-shadow:  3px 3px 8px #3b5188,
-                   -3px -3px 8px #8797d9;
-      border-radius: 8px;
-      color: #fff;
-      cursor: pointer;
-      transition: background 0.3s ease;
+    .scoreboard {
+      font-size: 18px;
+      margin-top: 10px;
+      color: #0ff;
+      text-shadow: 0 0 10px #0ff;
     }
-    .store-item button:disabled {
-      background: #555;
-      box-shadow: none;
-      cursor: default;
-      color: #aaa;
-    }
-    .store-item button:hover:not(:disabled) {
-      background: linear-gradient(145deg, #49639b, #7a92d6);
+    /* 3D style effects */
+    .shadow-ball {
+      filter: drop-shadow(3px 3px 3px rgba(0,0,0,0.7));
     }
   </style>
 </head>
@@ -131,8 +113,8 @@
 <canvas id="gameCanvas" width="360" height="480"></canvas>
 
 <div id="startScreen" class="screen active">
-  <h2>مرحبًا بك في Flappy Ball</h2>
-  <input type="text" id="playerName" placeholder="ادخل اسمك">
+  <h2>مرحبًا بك في Flappy Ball 3D</h2>
+  <input type="text" id="playerName" placeholder="ادخل اسمك" maxlength="15" />
   <div id="coinsDisplay">💰 0</div>
   <button onclick="startGame()">ابدأ اللعبة</button>
   <button onclick="openStore()">المتجر</button>
@@ -153,6 +135,7 @@
 </div>
 
 <script>
+  // عناصر DOM
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
 
@@ -166,112 +149,169 @@
   const storeItems = document.getElementById("storeItems");
   const playerNameInput = document.getElementById("playerName");
 
+  // إعدادات اللعبة
   let gameStarted = false;
   let score = 0;
   let bestScore = parseInt(localStorage.getItem("bestScore")) || 0;
   let coins = parseInt(localStorage.getItem("coins")) || 0;
-  let ownedCharacters = JSON.parse(localStorage.getItem("ownedCharacters")) || [1];
-  let selectedCharacter = ownedCharacters[0] || 1;
+  let selectedCharacter = 0;
+  let ownedCharacters = JSON.parse(localStorage.getItem("ownedCharacters")) || [0];
   let pipes = [];
   let frame = 0;
   let pipeSpeed = 2;
   let lives = 5;
 
-  // تحميل صور الطيور من API خارجية
+  // صور الشخصيات (20 شخصية بتصميم pixel-art من API خارجي)
   const birdImages = Array.from({length: 20}).map((_, i) => {
     const img = new Image();
-    img.src = `https://api.dicebear.com/7.x/pixel-art/svg?seed=char${i+1}`;
+    img.src = `https://api.dicebear.com/7.x/pixel-art/svg?seed=char${i}`;
     return img;
   });
 
+  // صورة الخلفية (3D illusion)
   const background = new Image();
   background.src = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQthyR3vhdCtHuJAYQDqOi8fCbjWi20TQ5chA&usqp=CAU";
 
-  const bird = {
+  // كرة اللاعب مع تأثير 3D
+  const ball = {
     x: 60,
     y: 150,
     width: 40,
     height: 40,
-    gravity: 1.5,
+    gravity: 1.3,
     velocity: 0,
-    jump: -12,
-    draw: function () {
-      ctx.drawImage(birdImages[selectedCharacter], this.x, this.y, this.width, this.height);
+    jump: -14,
+    rotation: 0,  // للدوران ثلاثي الأبعاد
+    rotationSpeed: 0,
+    draw() {
+      ctx.save();
+      // مركز الكرة
+      ctx.translate(this.x + this.width/2, this.y + this.height/2);
+      // دوران حول المحور z (2D rotation illusion)
+      ctx.rotate(this.rotation);
+      // رسم ظل دائري لإعطاء إحساس 3D
+      let gradient = ctx.createRadialGradient(0, 0, this.width/4, 0, 0, this.width/2);
+      gradient.addColorStop(0, "#0ff");
+      gradient.addColorStop(1, "#004455");
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.width/2, 0, Math.PI * 2);
+      ctx.fill();
+      // رسم صورة الشخصية فوق الكرة
+      ctx.drawImage(birdImages[selectedCharacter], -this.width/2 + 2, -this.height/2 + 2, this.width - 4, this.height - 4);
+      ctx.restore();
     },
-    update: function () {
+    update() {
       this.velocity += this.gravity;
       this.y += this.velocity;
+      // دوران الكرة مع الحركة
+      this.rotationSpeed = this.velocity * 0.05;
+      this.rotation += this.rotationSpeed;
+      // حدود اللعب
       if (this.y + this.height > canvas.height) {
         loseLife();
+        this.y = canvas.height - this.height;
+        this.velocity = 0;
+      }
+      if (this.y < 0) {
+        this.y = 0;
+        this.velocity = 0;
       }
       this.draw();
     },
-    flap: function () {
+    flap() {
       this.velocity = this.jump;
-    }
+    },
+    moveUp() { this.y -= 6; if (this.y < 0) this.y = 0; },
+    moveDown() { this.y += 6; if (this.y + this.height > canvas.height) this.y = canvas.height - this.height; },
+    moveLeft() { this.x -= 6; if (this.x < 0) this.x = 0; },
+    moveRight() { this.x += 6; if (this.x + this.width > canvas.width) this.x = canvas.width - this.width; }
   };
 
+  // إنشاء أنابيب بشكل 3D وهمي
   function createPipe() {
     let topHeight = Math.floor(Math.random() * 180) + 50;
-    pipes.push({ x: canvas.width, topHeight });
+    pipes.push({ x: canvas.width, topHeight, width: 60, gap: 130 });
   }
 
+  // تحديث الأنابيب ورسمها مع تأثير 3D
   function updatePipes() {
+    ctx.lineWidth = 3;
     for (let i = 0; i < pipes.length; i++) {
       let p = pipes[i];
       p.x -= pipeSpeed;
 
-      ctx.fillStyle = "#228B22"; // لون الأنابيب أخضر غامق 3D effect
-      ctx.shadowColor = "rgba(0,0,0,0.7)";
-      ctx.shadowBlur = 10;
-      ctx.fillRect(p.x, 0, 50, p.topHeight);
-      ctx.fillRect(p.x, p.topHeight + 120, 50, canvas.height - p.topHeight - 120);
-      ctx.shadowBlur = 0;
+      // ظل 3D الأنابيب
+      ctx.fillStyle = "#006600";
+      ctx.strokeStyle = "#003300";
 
-      // تصادم مع الطائر
+      // رسم الجزء العلوي (أنبوب)
+      ctx.beginPath();
+      ctx.moveTo(p.x, 0);
+      ctx.lineTo(p.x + p.width, 0);
+      ctx.lineTo(p.x + p.width - 10, p.topHeight);
+      ctx.lineTo(p.x + 10, p.topHeight);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // رسم الجزء السفلي (أنبوب)
+      let bottomY = p.topHeight + p.gap;
+      ctx.beginPath();
+      ctx.moveTo(p.x + 10, bottomY);
+      ctx.lineTo(p.x + p.width - 10, bottomY);
+      ctx.lineTo(p.x + p.width, canvas.height);
+      ctx.lineTo(p.x, canvas.height);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // تصادم الكرة مع الأنابيب (مربع تقريبي)
       if (
-        bird.x < p.x + 50 &&
-        bird.x + bird.width > p.x &&
-        (
-          bird.y < p.topHeight ||
-          bird.y + bird.height > p.topHeight + 120
-        )
+        ball.x + ball.width > p.x + 5 && ball.x < p.x + p.width - 5 &&
+        (ball.y < p.topHeight || ball.y + ball.height > bottomY)
       ) {
         loseLife();
         pipes.splice(i, 1);
         i--;
       }
 
-      // زيادة النقاط عندما يمر الطائر من الأنبوب
-      if (p.x + 50 === bird.x) {
+      // زيادة النقاط والعملات عند تجاوز الأنبوب
+      if (p.x + p.width === ball.x) {
         score++;
         coins++;
         if (score % 5 === 0) pipeSpeed += 0.3;
       }
     }
-
-    pipes = pipes.filter(p => p.x + 50 > 0);
+    // إزالة الأنابيب التي خرجت عن الشاشة
+    pipes = pipes.filter(p => p.x + p.width > 0);
   }
 
+  // رسم الخلفية مع تأثير 3D وهمي (حركة بطيئة للخلفية)
   function drawBackground() {
-    let bgX = -(frame * pipeSpeed) % canvas.width;
+    let bgX = -(frame * pipeSpeed * 0.4) % canvas.width;
     ctx.drawImage(background, bgX, 0, canvas.width, canvas.height);
     ctx.drawImage(background, bgX + canvas.width, 0, canvas.width, canvas.height);
   }
 
+  // رسم لوحة النتائج والنقاط والقلوب
   function drawScore() {
-    ctx.fillStyle = "white";
-    ctx.font = "18px Arial";
-    ctx.fillText("النقاط: " + score, 10, 20);
-    ctx.fillText("العملات: " + coins, 10, 40);
-    ctx.fillText("❤️: " + lives, 10, 60);
+    ctx.fillStyle = "#0ff";
+    ctx.font = "18px Tahoma";
+    ctx.shadowColor = "#0ff";
+    ctx.shadowBlur = 8;
+    ctx.fillText("النقاط: " + score, 15, 25);
+    ctx.fillText("العملات: " + coins, 15, 50);
+    ctx.fillText("❤️: " + lives, 15, 75);
+    ctx.shadowBlur = 0;
   }
 
+  // حلقة اللعبة الرئيسية
   function gameLoop() {
     if (!gameStarted) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
-    bird.update();
+    ball.update();
     if (frame % 90 === 0) createPipe();
     updatePipes();
     drawScore();
@@ -279,16 +319,19 @@
     requestAnimationFrame(gameLoop);
   }
 
+  // فقدان حياة عند التصادم أو الوقوع
   function loseLife() {
     lives--;
     if (lives <= 0) {
       endGame();
     } else {
-      bird.velocity = 0;
-      bird.y = 150;
+      ball.velocity = 0;
+      ball.y = 150;
+      ball.x = 60;
     }
   }
 
+  // بدء اللعبة
   function startGame() {
     const playerName = playerNameInput.value.trim();
     if (!playerName) {
@@ -300,99 +343,116 @@
     pipes = [];
     frame = 0;
     pipeSpeed = 2;
-    bird.y = 150;
-    bird.velocity = 0;
+    ball.y = 150;
+    ball.x = 60;
+    ball.velocity = 0;
     gameStarted = true;
-    selectedCharacter = ownedCharacters[0] || 1;
     switchScreen(null);
     requestAnimationFrame(gameLoop);
   }
 
+  // انتهاء اللعبة
   function endGame() {
     gameStarted = false;
     finalScoreDisplay.innerText = score;
-    bestScore = Math.max(bestScore, score);
-    localStorage.setItem("bestScore", bestScore);
-    localStorage.setItem("coins", coins);
+    if (score > bestScore) {
+      bestScore = score;
+      localStorage.setItem("bestScore", bestScore);
+    }
     bestScoreDisplay.innerText = bestScore;
+    coins += score; // أضف النقاط كنقود مكافأة
+    localStorage.setItem("coins", coins);
+    coinsDisplay.innerText = `💰 ${coins}`;
     switchScreen(gameOverScreen);
   }
 
+  // إعادة تشغيل اللعبة
   function restartGame() {
     switchScreen(startScreen);
   }
 
-  function switchScreen(target) {
-    [startScreen, gameOverScreen, storeScreen].forEach(screen => {
-      screen.classList.remove("active");
+  // تبديل الشاشات
+  function switchScreen(screen) {
+    [startScreen, gameOverScreen, storeScreen].forEach(s => {
+      if (s === screen) s.classList.add("active");
+      else s.classList.remove("active");
     });
-    if (target) target.classList.add("active");
   }
 
-  // متجر شخصيات مع عملات
-  const characters = Array.from({length: 20}, (_, i) => ({
-    id: i,
-    name: `شخصية ${i+1}`,
-    price: (i+1)*5,
-    image: `https://api.dicebear.com/7.x/pixel-art/svg?seed=char${i+1}`
-  }));
-
-  function openStore() {
-    storeCoins.innerText = coins;
-    storeItems.innerHTML = "";
-    characters.forEach(char => {
-      const owned = ownedCharacters.includes(char.id);
-      const btn = document.createElement("button");
-      btn.innerText = owned ? "مملوك" : `شراء (${char.price} عملة)`;
-      btn.disabled = owned || coins < char.price;
-      btn.onclick = () => buyCharacter(char);
-      const item = document.createElement("div");
-      item.className = "store-item";
-      const img = document.createElement("img");
-      img.src = char.image;
-      item.appendChild(img);
-      item.appendChild(document.createTextNode(char.name));
-      item.appendChild(document.createElement("br"));
-      item.appendChild(btn);
-      storeItems.appendChild(item);
-    });
-    switchScreen(storeScreen);
-  }
-
-  function buyCharacter(char) {
-    if (coins >= char.price && !ownedCharacters.includes(char.id)) {
-      coins -= char.price;
-      ownedCharacters.push(char.id);
-      localStorage.setItem("ownedCharacters", JSON.stringify(ownedCharacters));
-      localStorage.setItem("coins", coins);
-      openStore();
+  // تحكم يدوي كامل بالكرة
+  window.addEventListener("keydown", (e) => {
+    if (!gameStarted) return;
+    switch(e.key) {
+      case "ArrowUp": ball.moveUp(); break;
+      case "ArrowDown": ball.moveDown(); break;
+      case "ArrowLeft": ball.moveLeft(); break;
+      case "ArrowRight": ball.moveRight(); break;
+      case " ": ball.flap(); break; // مسافة للقفز
     }
-  }
+  });
 
+  // فتح المتجر
+  function openStore() {
+    switchScreen(storeScreen);
+    storeCoins.innerText = coins;
+    renderStore();
+  }
+  // إغلاق المتجر
   function closeStore() {
     switchScreen(startScreen);
   }
 
-  // التحكم بالحركة - إضافة ضغط شاشة
-  window.addEventListener("click", () => {
-    if (gameStarted) bird.flap();
-  });
+  // عناصر المتجر مع الأسعار
+  const items = [
+    { id: 1, name: "شخصية 1", price: 10, imgIndex: 1 },
+    { id: 2, name: "شخصية 2", price: 20, imgIndex: 2 },
+    { id: 3, name: "شخصية 3", price: 30, imgIndex: 3 },
+    { id: 4, name: "درع حماية 1", price: 15, effect: "shield" },
+    { id: 5, name: "درع حماية 2", price: 25, effect: "shield" },
+  ];
 
-  window.addEventListener("touchstart", () => {
-    if (gameStarted) bird.flap();
-  });
-
-  window.addEventListener("keydown", (e) => {
-    if (e.code === "Space" && gameStarted) {
-      bird.flap();
-    }
-  });
-
-  // عند فتح اللعبة نحدث العرض للنقاط والعملة والاسم
-  function updateUI() {
-    coinsDisplay.innerText = `💰 ${coins}`;
+  // عرض عناصر المتجر
+  function renderStore() {
+    storeItems.innerHTML = "";
+    items.forEach(item => {
+      let owned = ownedCharacters.includes(item.imgIndex);
+      let div = document.createElement("div");
+      div.classList.add("store-item");
+      div.innerHTML = `
+        <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed=char${item.imgIndex}" alt="${item.name}" />
+        <div>${item.name}</div>
+        <div>السعر: ${item.price} 💰</div>
+        <button ${owned ? "disabled" : ""} onclick="buyItem(${item.id})">${owned ? "مملوك" : "شراء"}</button>
+      `;
+      storeItems.appendChild(div);
+    });
   }
-  updateUI();
+
+  // شراء عنصر من المتجر
+  function buyItem(id) {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    if (coins < item.price) {
+      alert("ليس لديك عملات كافية!");
+      return;
+    }
+    coins -= item.price;
+    localStorage.setItem("coins", coins);
+    storeCoins.innerText = coins;
+
+    if (item.imgIndex !== undefined) {
+      if (!ownedCharacters.includes(item.imgIndex)) {
+        ownedCharacters.push(item.imgIndex);
+        localStorage.setItem("ownedCharacters", JSON.stringify(ownedCharacters));
+      }
+      selectedCharacter = item.imgIndex;
+    }
+    alert("تم الشراء بنجاح!");
+    renderStore();
+  }
+
+  // تحديث عرض العملات عند بدء اللعبة
+  coinsDisplay.innerText = `💰 ${coins}`;
 
 </script>
 
