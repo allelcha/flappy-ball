@@ -51,309 +51,254 @@
       background: #444;
       padding: 10px;
       border-radius: 5px;
+      width: 100px;
     }
     .store-item img {
+      width: 80px;
+      height: 80px;
       border-radius: 5px;
     }
   </style>
 </head>
 <body>
 
-  <canvas id="gameCanvas" width="360" height="480"></canvas>
+<canvas id="gameCanvas" width="360" height="480"></canvas>
 
-  <div id="startScreen" class="screen active">
-    <h2>مرحبًا بك في Flappy Ball</h2>
-    <input type="text" id="playerName" placeholder="ادخل اسمك">
-    <div id="coinsDisplay">💰 0</div>
-    <button onclick="startGame()">ابدأ اللعبة</button>
-    <button onclick="openStore()">المتجر</button>
-  </div>
+<div id="startScreen" class="screen active">
+  <h2>مرحبًا بك في Flappy Ball</h2>
+  <input type="text" id="playerName" placeholder="ادخل اسمك">
+  <div id="coinsDisplay">💰 0</div>
+  <button onclick="startGame()">ابدأ اللعبة</button>
+  <button onclick="openStore()">المتجر</button>
+</div>
 
-  <div id="gameOverScreen" class="screen">
-    <h2>انتهت اللعبة</h2>
-    <p>نتيجتك: <span id="finalScore"></span></p>
-    <p>أفضل نتيجة: <span id="bestScore"></span></p>
-    <button onclick="restartGame()">إعادة</button>
-  </div>
+<div id="gameOverScreen" class="screen">
+  <h2>انتهت اللعبة</h2>
+  <p>نتيجتك: <span id="finalScore"></span></p>
+  <p>أفضل نتيجة: <span id="bestScore"></span></p>
+  <button onclick="restartGame()">إعادة</button>
+</div>
 
-  <div id="storeScreen" class="screen">
-    <h2>المتجر</h2>
-    <p>💰 <span id="storeCoins">0</span></p>
-    <div id="storeItems"></div>
-    <button onclick="closeStore()">رجوع</button>
-  </div>
+<div id="storeScreen" class="screen">
+  <h2>المتجر</h2>
+  <p>💰 <span id="storeCoins">0</span></p>
+  <div id="storeItems"></div>
+  <button onclick="closeStore()">رجوع</button>
+</div>
 
-  <script>
-    // (الصق هنا كود JavaScript الكامل من الرسالة السابقة)
-  </script>
+<script>
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+
+  const startScreen = document.getElementById("startScreen");
+  const gameOverScreen = document.getElementById("gameOverScreen");
+  const storeScreen = document.getElementById("storeScreen");
+  const finalScoreDisplay = document.getElementById("finalScore");
+  const bestScoreDisplay = document.getElementById("bestScore");
+  const coinsDisplay = document.getElementById("coinsDisplay");
+  const storeCoins = document.getElementById("storeCoins");
+  const storeItems = document.getElementById("storeItems");
+  const playerNameInput = document.getElementById("playerName");
+
+  let gameStarted = false;
+  let score = 0;
+  let bestScore = localStorage.getItem("bestScore") || 0;
+  let coins = parseInt(localStorage.getItem("coins")) || 0;
+  let selectedCharacter = 0;
+  let ownedCharacters = JSON.parse(localStorage.getItem("ownedCharacters")) || [0];
+  let pipes = [];
+  let frame = 0;
+  let pipeSpeed = 2;
+  let lives = 5;
+
+  const birdImages = Array.from({length: 20}).map((_, i) => {
+    const img = new Image();
+    img.src = `https://api.dicebear.com/7.x/pixel-art/svg?seed=char${i}`;
+    return img;
+  });
+
+  const background = new Image();
+  background.src = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQthyR3vhdCtHuJAYQDqOi8fCbjWi20TQ5chA&usqp=CAU";
+
+  const bird = {
+    x: 60,
+    y: 150,
+    width: 40,
+    height: 40,
+    gravity: 1.5,
+    velocity: 0,
+    jump: -15,
+    draw: function () {
+      ctx.drawImage(birdImages[selectedCharacter], this.x, this.y, this.width, this.height);
+    },
+    update: function () {
+      this.velocity += this.gravity;
+      this.y += this.velocity;
+      if (this.y + this.height > canvas.height) {
+        loseLife();
+      }
+      this.draw();
+    },
+    flap: function () {
+      this.velocity = this.jump;
+    }
+  };
+
+  function createPipe() {
+    let topHeight = Math.floor(Math.random() * 180) + 50;
+    pipes.push({ x: canvas.width, topHeight });
+  }
+
+  function updatePipes() {
+    for (let i = 0; i < pipes.length; i++) {
+      let p = pipes[i];
+      p.x -= pipeSpeed;
+
+      ctx.fillStyle = "green";
+      ctx.fillRect(p.x, 0, 50, p.topHeight);
+      ctx.fillRect(p.x, p.topHeight + 120, 50, canvas.height - p.topHeight - 120);
+
+      if (
+        bird.x < p.x + 50 &&
+        bird.x + bird.width > p.x &&
+        (
+          bird.y < p.topHeight ||
+          bird.y + bird.height > p.topHeight + 120
+        )
+      ) {
+        loseLife();
+        pipes.splice(i, 1);
+        i--;
+      }
+
+      if (p.x + 50 === bird.x) {
+        score++;
+        coins++;
+        if (score % 5 === 0) pipeSpeed += 0.3;
+      }
+    }
+
+    pipes = pipes.filter(p => p.x + 50 > 0);
+  }
+
+  function drawBackground(offset) {
+    let bgX = -(frame * pipeSpeed) % canvas.width;
+    ctx.drawImage(background, bgX, 0, canvas.width, canvas.height);
+    ctx.drawImage(background, bgX + canvas.width, 0, canvas.width, canvas.height);
+  }
+
+  function drawScore() {
+    ctx.fillStyle = "white";
+    ctx.font = "18px Arial";
+    ctx.fillText("النقاط: " + score, 10, 20);
+    ctx.fillText("العملات: " + coins, 10, 40);
+    ctx.fillText("❤️: " + lives, 10, 60);
+  }
+
+  function gameLoop() {
+    if (!gameStarted) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBackground();
+    bird.update();
+    if (frame % 90 === 0) createPipe();
+    updatePipes();
+    drawScore();
+    frame++;
+    requestAnimationFrame(gameLoop);
+  }
+
+  function loseLife() {
+    lives--;
+    if (lives <= 0) {
+      endGame();
+    } else {
+      bird.velocity = 0;
+      bird.y = 150;
+    }
+  }
+
+  function startGame() {
+    const playerName = playerNameInput.value.trim();
+    if (!playerName) return alert("ادخل اسمك أولاً");
+
+    score = 0;
+    lives = 5;
+    pipes = [];
+    frame = 0;
+    pipeSpeed = 2;
+    bird.y = 150;
+    bird.velocity = 0;
+    gameStarted = true;
+    switchScreen(null);
+    requestAnimationFrame(gameLoop);
+  }
+
+  function endGame() {
+    gameStarted = false;
+    finalScoreDisplay.innerText = score;
+    bestScore = Math.max(bestScore, score);
+    localStorage.setItem("bestScore", bestScore);
+    localStorage.setItem("coins", coins);
+    bestScoreDisplay.innerText = bestScore;
+    switchScreen(gameOverScreen);
+  }
+
+  function restartGame() {
+    switchScreen(startScreen);
+  }
+
+  function switchScreen(target) {
+    [startScreen, gameOverScreen, storeScreen].forEach(screen => screen.classList.remove("active"));
+    if (target) target.classList.add("active");
+    updateDisplays();
+  }
+
+  function updateDisplays() {
+    coinsDisplay.innerText = `💰 ${coins}`;
+    storeCoins.innerText = coins;
+  }
+
+  function openStore() {
+    storeItems.innerHTML = "";
+    for (let i = 0; i < birdImages.length; i++) {
+      const item = document.createElement("div");
+      item.className = "store-item";
+      item.innerHTML = `<img src="${birdImages[i].src}" /><br/>${ownedCharacters.includes(i) ? "✅" : `🪙 ${(i+1)*10}`}<br/><button>${ownedCharacters.includes(i) ? "اختر" : "شراء"}</button>`;
+      item.querySelector("button").onclick = () => {
+        if (ownedCharacters.includes(i)) {
+          selectedCharacter = i;
+        } else if (coins >= (i+1)*10) {
+          coins -= (i+1)*10;
+          ownedCharacters.push(i);
+          localStorage.setItem("ownedCharacters", JSON.stringify(ownedCharacters));
+          selectedCharacter = i;
+        } else {
+          alert("لا يوجد عملات كافية");
+        }
+        localStorage.setItem("coins", coins);
+        updateDisplays();
+        openStore();
+      };
+      storeItems.appendChild(item);
+    }
+    switchScreen(storeScreen);
+  }
+
+  function closeStore() {
+    switchScreen(startScreen);
+  }
+
+  document.addEventListener("keydown", e => {
+    if (e.code === "Space") bird.flap();
+  });
+  document.addEventListener("touchstart", () => {
+    if (gameStarted) bird.flap();
+  });
+
+  window.onload = () => {
+    updateDisplays();
+  };
+</script>
+
 </body>
 </html>
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-
-// الشاشات
-const startScreen = document.getElementById("startScreen");
-const gameOverScreen = document.getElementById("gameOverScreen");
-const storeScreen = document.getElementById("storeScreen");
-const playerNameInput = document.getElementById("playerName");
-const finalScoreDisplay = document.getElementById("finalScore");
-const bestScoreDisplay = document.getElementById("bestScore");
-const coinsDisplay = document.getElementById("coinsDisplay");
-const storeCoins = document.getElementById("storeCoins");
-const storeItems = document.getElementById("storeItems");
-
-let gameStarted = false;
-let score = 0;
-let bestScore = localStorage.getItem("bestScore") || 0;
-let coins = parseInt(localStorage.getItem("coins")) || 0;
-let lives = 5;
-let pipeSpeed = 2;
-let pipes = [];
-let frame = 0;
-let backgroundX = 0;
-
-const backgroundImg = new Image();
-backgroundImg.src = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQthyR3vhdCtHuJAYQDqOi8fCbjWi20TQ5chA&usqp=CAU";
-
-// صور الشخصيات
-let characters = [];
-for (let i = 1; i <= 20; i++) {
-  characters.push({
-    name: "شخصية " + i,
-    img: `https://robohash.org/${i}?set=set4`,
-    price: i * 10,
-    owned: false
-  });
-}
-characters[0].owned = true;
-
-let selectedCharacterIndex = parseInt(localStorage.getItem("selectedCharacter")) || 0;
-let playerImg = new Image();
-playerImg.src = characters[selectedCharacterIndex].img;
-
-let coinImg = new Image();
-coinImg.src = "https://cdn-icons-png.flaticon.com/512/138/138292.png";
-
-let jumpSound = new Audio("https://www.soundjay.com/button/sounds/button-16.mp3");
-let hitSound = new Audio("https://www.soundjay.com/button/sounds/button-10.mp3");
-
-let player = {
-  x: 60,
-  y: 150,
-  width: 40,
-  height: 40,
-  gravity: 1.5,
-  velocity: 0,
-  jump: -15,
-  draw() {
-    ctx.drawImage(playerImg, this.x, this.y, this.width, this.height);
-  },
-  update() {
-    this.velocity += this.gravity;
-    this.y += this.velocity;
-    if (this.y + this.height > canvas.height) loseLife();
-    this.draw();
-  },
-  flap() {
-    this.velocity = this.jump;
-    jumpSound.play();
-  }
-};
-
-let coinsOnField = [];
-
-function createPipe() {
-  let topHeight = Math.floor(Math.random() * 200) + 50;
-  pipes.push({ x: canvas.width, topHeight: topHeight });
-
-  // وضع عملة
-  if (Math.random() < 0.6) {
-    coinsOnField.push({
-      x: canvas.width + 20,
-      y: topHeight + 60,
-      collected: false
-    });
-  }
-}
-
-function updatePipes() {
-  for (let i = 0; i < pipes.length; i++) {
-    let p = pipes[i];
-    p.x -= pipeSpeed;
-
-    ctx.fillStyle = "green";
-    ctx.fillRect(p.x, 0, 50, p.topHeight);
-    ctx.fillRect(p.x, p.topHeight + 120, 50, canvas.height - p.topHeight - 120);
-
-    // تصادم
-    if (
-      player.x < p.x + 50 &&
-      player.x + player.width > p.x &&
-      (
-        player.y < p.topHeight ||
-        player.y + player.height > p.topHeight + 120
-      )
-    ) {
-      hitSound.play();
-      loseLife();
-    }
-
-    // زيادة النقاط
-    if (p.x + 50 === player.x) {
-      score++;
-      if (score % 5 === 0) pipeSpeed += 0.3;
-    }
-  }
-
-  pipes = pipes.filter(p => p.x + 50 > 0);
-}
-
-function updateCoins() {
-  for (let i = 0; i < coinsOnField.length; i++) {
-    let c = coinsOnField[i];
-    c.x -= pipeSpeed;
-    ctx.drawImage(coinImg, c.x, c.y, 25, 25);
-
-    if (
-      !c.collected &&
-      player.x < c.x + 25 &&
-      player.x + player.width > c.x &&
-      player.y < c.y + 25 &&
-      player.y + player.height > c.y
-    ) {
-      c.collected = true;
-      coins++;
-      localStorage.setItem("coins", coins);
-    }
-  }
-  coinsOnField = coinsOnField.filter(c => c.x + 25 > 0 && !c.collected);
-}
-
-function drawBackground() {
-  backgroundX -= 1;
-  if (backgroundX <= -canvas.width) backgroundX = 0;
-  ctx.drawImage(backgroundImg, backgroundX, 0, canvas.width, canvas.height);
-  ctx.drawImage(backgroundImg, backgroundX + canvas.width, 0, canvas.width, canvas.height);
-}
-
-function drawScore() {
-  ctx.fillStyle = "white";
-  ctx.font = "18px Arial";
-  ctx.fillText("النقاط: " + score, 10, 25);
-  ctx.fillText("💰 " + coins, 280, 25);
-  ctx.fillText("❤️ " + lives, 10, 50);
-}
-
-function gameLoop() {
-  if (!gameStarted) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawBackground();
-  player.update();
-
-  if (frame % 90 === 0) createPipe();
-  updatePipes();
-  updateCoins();
-  drawScore();
-
-  frame++;
-  requestAnimationFrame(gameLoop);
-}
-
-function startGame() {
-  if (!playerNameInput.value) return alert("أدخل اسمك أولاً");
-
-  score = 0;
-  lives = 5;
-  coinsOnField = [];
-  pipes = [];
-  frame = 0;
-  pipeSpeed = 2;
-  player.y = 150;
-  player.velocity = 0;
-  playerImg.src = characters[selectedCharacterIndex].img;
-  gameStarted = true;
-
-  startScreen.style.display = "none";
-  gameOverScreen.style.display = "none";
-  storeScreen.style.display = "none";
-  requestAnimationFrame(gameLoop);
-}
-
-function endGame() {
-  gameStarted = false;
-  finalScoreDisplay.innerText = score;
-  bestScore = Math.max(bestScore, score);
-  localStorage.setItem("bestScore", bestScore);
-  bestScoreDisplay.innerText = bestScore;
-  gameOverScreen.style.display = "block";
-}
-
-function restartGame() {
-  startGame();
-}
-
-function loseLife() {
-  lives--;
-  if (lives <= 0) endGame();
-  else {
-    player.velocity = 0;
-    player.y = 150;
-  }
-}
-
-function openStore() {
-  storeScreen.style.display = "block";
-  startScreen.style.display = "none";
-  storeCoins.innerText = coins;
-  renderStore();
-}
-
-function closeStore() {
-  storeScreen.style.display = "none";
-  startScreen.style.display = "block";
-  coinsDisplay.innerText = coins;
-}
-
-function renderStore() {
-  storeItems.innerHTML = "";
-  characters.forEach((char, index) => {
-    let div = document.createElement("div");
-    div.className = "store-item";
-    div.innerHTML = `
-      <img src="${char.img}" width="60"><br>
-      ${char.name}<br>
-      ${char.owned ? "💚 مملوكة" : `السعر: ${char.price}`}<br>
-      <button onclick="selectCharacter(${index})">${char.owned ? "اختيار" : "شراء"}</button>
-    `;
-    storeItems.appendChild(div);
-  });
-}
-
-function selectCharacter(index) {
-  let char = characters[index];
-  if (char.owned) {
-    selectedCharacterIndex = index;
-    localStorage.setItem("selectedCharacter", index);
-    alert("تم اختيار الشخصية!");
-  } else if (coins >= char.price) {
-    coins -= char.price;
-    char.owned = true;
-    localStorage.setItem("coins", coins);
-    renderStore();
-  } else {
-    alert("لا توجد عملات كافية!");
-  }
-}
-
-document.addEventListener("keydown", e => {
-  if (e.code === "Space") player.flap();
-});
-document.addEventListener("touchstart", () => {
-  if (gameStarted) player.flap();
-});
-
-window.onload = () => {
-  coinsDisplay.innerText = coins;
-  bestScoreDisplay.innerText = bestScore;
-  startScreen.style.display = "block";
-};
