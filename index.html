@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>Flappy Ball 🏐</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="gameCanvas" width="360" height="480"></canvas>
+
+  <!-- شاشة البداية -->
+  <div id="startScreen">
+    <h1>Flappy Ball 🏐</h1>
+    <label>اسم اللاعب:</label>
+    <input type="text" id="playerName" placeholder="أدخل اسمك"><br><br>
+
+    <label>اختر الصعوبة:</label>
+    <select id="difficulty">
+      <option value="easy">سهل</option>
+      <option value="medium">متوسط</option>
+      <option value="hard">صعب</option>
+    </select><br><br>
+
+    <label>اختر الشخصية:</label>
+    <select id="characterSelect"></select><br><br>
+
+    <p>عملاتك: <span id="coinsCount">0</span> 🪙</p>
+
+    <button onclick="openShop()">🎨 متجر الشخصيات</button><br><br>
+    <button onclick="startGame()">ابدأ اللعبة</button>
+  </div>
+
+  <!-- شاشة النهاية -->
+  <div id="gameOverScreen">
+    <h2>انتهت اللعبة 😵</h2>
+    <p>النقاط: <span id="finalScore">0</span></p>
+    <p>أعلى نتيجة: <span id="bestScore">0</span></p>
+    <p>العملات المكتسبة: <span id="earnedCoins">0</span> 🪙</p>
+    <button onclick="restartGame()">🔁 إعادة المحاولة</button>
+  </div>
+
+  <!-- متجر الشخصيات -->
+  <div id="shopScreen">
+    <h2>🎨 متجر الشخصيات</h2>
+    <div id="shopCharacters"></div>
+    <button onclick="closeShop()">🔙 رجوع</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
