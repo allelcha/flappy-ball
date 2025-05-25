@@ -3,108 +3,109 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Flappy Ball 3D متطورة</title>
+  <title>Flappy Ball - تحكم باللمس</title>
   <style>
     * {
-      margin: 0; padding: 0; box-sizing: border-box; font-family: 'Tahoma', sans-serif;
+      margin: 0; padding: 0; box-sizing: border-box;
+      font-family: 'Tahoma', sans-serif;
     }
     body {
-      background: linear-gradient(135deg, #020111, #3a3a52);
+      background: #111;
       color: #fff;
       text-align: center;
-      overflow: hidden;
       user-select: none;
+      touch-action: none; /* مهم لمنع السحب الافتراضي */
     }
     canvas {
+      background: linear-gradient(135deg, #1e1e1e 0%, #121212 100%);
       display: block;
       margin: 20px auto;
-      background: linear-gradient(to bottom, #1e1e2f, #0c0c13);
-      border-radius: 15px;
-      box-shadow: 0 0 20px #3af;
-      filter: drop-shadow(0 0 10px #3af);
+      border: 3px solid #00ffd5;
+      border-radius: 12px;
+      box-shadow: 0 0 15px #00ffd5;
+      touch-action: none; /* مهم */
     }
     .screen {
       display: none;
       padding: 20px;
-      max-width: 360px;
-      margin: 10px auto;
-      background: rgba(0,0,0,0.6);
-      border-radius: 10px;
-      box-shadow: 0 0 15px #3af;
     }
     .screen.active {
       display: block;
     }
-    input, button {
-      font-size: 16px;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 8px;
-      border: none;
-      outline: none;
-      transition: background-color 0.3s ease;
-    }
     input {
-      width: 100%;
-      max-width: 300px;
+      padding: 10px;
+      margin: 10px auto;
+      width: 200px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1.5px solid #00ffd5;
       background: #222;
-      color: #eee;
+      color: #0ff;
       text-align: center;
-      box-shadow: inset 0 0 8px #06f;
+      outline: none;
+      transition: 0.3s;
+    }
+    input:focus {
+      border-color: #00ffab;
+      box-shadow: 0 0 6px #00ffab;
     }
     button {
-      background: #06f;
-      color: white;
+      padding: 12px 25px;
+      font-size: 18px;
+      margin: 10px;
       cursor: pointer;
-      width: 150px;
-      box-shadow: 0 0 12px #06f;
+      border-radius: 8px;
+      border: none;
+      background: #00ffd5;
+      color: #000;
+      font-weight: bold;
+      transition: background 0.3s;
     }
     button:hover {
-      background: #38f;
+      background: #00ffab;
     }
-    #coinsDisplay, #storeCoins {
+    #coinsDisplay {
       font-size: 20px;
       margin-top: 10px;
       color: #0ff;
-      text-shadow: 0 0 10px #0ff;
     }
     #storeItems {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 12px;
+      gap: 15px;
       margin-top: 15px;
     }
     .store-item {
-      background: #111833;
-      padding: 10px;
+      background: #222;
+      padding: 12px;
       border-radius: 10px;
-      width: 100px;
-      box-shadow: 0 0 10px #05f inset;
+      width: 110px;
+      color: #0ff;
+      box-shadow: 0 0 8px #00ffd5aa;
       user-select: none;
-      transition: transform 0.2s ease;
     }
-    .store-item:hover {
-      transform: scale(1.1);
-      box-shadow: 0 0 20px #0ff inset;
-    }
-    .store-item img {
+    .store-item div {
       width: 80px;
       height: 80px;
-      border-radius: 10px;
-      border: 2px solid #0ff;
-      margin-bottom: 5px;
-      filter: drop-shadow(0 0 6px #0ff);
+      border-radius: 50%;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 0 3px #00ffd5);
     }
-    .scoreboard {
-      font-size: 18px;
-      margin-top: 10px;
+    .store-item button {
+      width: 100%;
+      margin-top: 6px;
+      background: #008f7f;
       color: #0ff;
-      text-shadow: 0 0 10px #0ff;
+      font-weight: bold;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s;
     }
-    /* 3D style effects */
-    .shadow-ball {
-      filter: drop-shadow(3px 3px 3px rgba(0,0,0,0.7));
+    .store-item button:hover {
+      background: #00ffd5;
+      color: #000;
     }
   </style>
 </head>
@@ -113,11 +114,12 @@
 <canvas id="gameCanvas" width="360" height="480"></canvas>
 
 <div id="startScreen" class="screen active">
-  <h2>مرحبًا بك في Flappy Ball 3D</h2>
+  <h2>مرحبًا بك في Flappy Ball</h2>
   <input type="text" id="playerName" placeholder="ادخل اسمك" maxlength="15" />
   <div id="coinsDisplay">💰 0</div>
   <button onclick="startGame()">ابدأ اللعبة</button>
   <button onclick="openStore()">المتجر</button>
+  <p>حرك الكرة بالسحب على الشاشة</p>
 </div>
 
 <div id="gameOverScreen" class="screen">
@@ -135,7 +137,6 @@
 </div>
 
 <script>
-  // عناصر DOM
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
 
@@ -149,7 +150,6 @@
   const storeItems = document.getElementById("storeItems");
   const playerNameInput = document.getElementById("playerName");
 
-  // إعدادات اللعبة
   let gameStarted = false;
   let score = 0;
   let bestScore = parseInt(localStorage.getItem("bestScore")) || 0;
@@ -161,157 +161,85 @@
   let pipeSpeed = 2;
   let lives = 5;
 
-  // صور الشخصيات (20 شخصية بتصميم pixel-art من API خارجي)
-  const birdImages = Array.from({length: 20}).map((_, i) => {
-    const img = new Image();
-    img.src = `https://api.dicebear.com/7.x/pixel-art/svg?seed=char${i}`;
-    return img;
-  });
-
-  // صورة الخلفية (3D illusion)
-  const background = new Image();
-  background.src = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQthyR3vhdCtHuJAYQDqOi8fCbjWi20TQ5chA&usqp=CAU";
-
-  // كرة اللاعب مع تأثير 3D
+  // الكرة = الشخصية (دائرة بدلاً من صورة طير)
   const ball = {
     x: 60,
-    y: 150,
-    width: 40,
-    height: 40,
-    gravity: 1.3,
-    velocity: 0,
-    jump: -14,
-    rotation: 0,  // للدوران ثلاثي الأبعاد
-    rotationSpeed: 0,
-    draw() {
-      ctx.save();
-      // مركز الكرة
-      ctx.translate(this.x + this.width/2, this.y + this.height/2);
-      // دوران حول المحور z (2D rotation illusion)
-      ctx.rotate(this.rotation);
-      // رسم ظل دائري لإعطاء إحساس 3D
-      let gradient = ctx.createRadialGradient(0, 0, this.width/4, 0, 0, this.width/2);
-      gradient.addColorStop(0, "#0ff");
-      gradient.addColorStop(1, "#004455");
-      ctx.fillStyle = gradient;
+    y: 240,
+    radius: 20,
+    color: "#00ffd5",
+    draw: function () {
       ctx.beginPath();
-      ctx.arc(0, 0, this.width/2, 0, Math.PI * 2);
+      ctx.fillStyle = this.color;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = 12;
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
       ctx.fill();
-      // رسم صورة الشخصية فوق الكرة
-      ctx.drawImage(birdImages[selectedCharacter], -this.width/2 + 2, -this.height/2 + 2, this.width - 4, this.height - 4);
-      ctx.restore();
-    },
-    update() {
-      this.velocity += this.gravity;
-      this.y += this.velocity;
-      // دوران الكرة مع الحركة
-      this.rotationSpeed = this.velocity * 0.05;
-      this.rotation += this.rotationSpeed;
-      // حدود اللعب
-      if (this.y + this.height > canvas.height) {
-        loseLife();
-        this.y = canvas.height - this.height;
-        this.velocity = 0;
-      }
-      if (this.y < 0) {
-        this.y = 0;
-        this.velocity = 0;
-      }
-      this.draw();
-    },
-    flap() {
-      this.velocity = this.jump;
-    },
-    moveUp() { this.y -= 6; if (this.y < 0) this.y = 0; },
-    moveDown() { this.y += 6; if (this.y + this.height > canvas.height) this.y = canvas.height - this.height; },
-    moveLeft() { this.x -= 6; if (this.x < 0) this.x = 0; },
-    moveRight() { this.x += 6; if (this.x + this.width > canvas.width) this.x = canvas.width - this.width; }
+      ctx.closePath();
+    }
   };
 
-  // إنشاء أنابيب بشكل 3D وهمي
   function createPipe() {
     let topHeight = Math.floor(Math.random() * 180) + 50;
-    pipes.push({ x: canvas.width, topHeight, width: 60, gap: 130 });
+    pipes.push({ x: canvas.width, topHeight });
   }
 
-  // تحديث الأنابيب ورسمها مع تأثير 3D
   function updatePipes() {
-    ctx.lineWidth = 3;
     for (let i = 0; i < pipes.length; i++) {
       let p = pipes[i];
       p.x -= pipeSpeed;
 
-      // ظل 3D الأنابيب
-      ctx.fillStyle = "#006600";
-      ctx.strokeStyle = "#003300";
+      // أنابيب (مستطيلات)
+      ctx.fillStyle = "#00bb44";
+      ctx.shadowColor = "#00bb44";
+      ctx.shadowBlur = 8;
+      ctx.fillRect(p.x, 0, 50, p.topHeight);
+      ctx.fillRect(p.x, p.topHeight + 120, 50, canvas.height - p.topHeight - 120);
 
-      // رسم الجزء العلوي (أنبوب)
-      ctx.beginPath();
-      ctx.moveTo(p.x, 0);
-      ctx.lineTo(p.x + p.width, 0);
-      ctx.lineTo(p.x + p.width - 10, p.topHeight);
-      ctx.lineTo(p.x + 10, p.topHeight);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-
-      // رسم الجزء السفلي (أنبوب)
-      let bottomY = p.topHeight + p.gap;
-      ctx.beginPath();
-      ctx.moveTo(p.x + 10, bottomY);
-      ctx.lineTo(p.x + p.width - 10, bottomY);
-      ctx.lineTo(p.x + p.width, canvas.height);
-      ctx.lineTo(p.x, canvas.height);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-
-      // تصادم الكرة مع الأنابيب (مربع تقريبي)
+      // تصادم الكرة مع الأنابيب
       if (
-        ball.x + ball.width > p.x + 5 && ball.x < p.x + p.width - 5 &&
-        (ball.y < p.topHeight || ball.y + ball.height > bottomY)
+        ball.x + ball.radius > p.x &&
+        ball.x - ball.radius < p.x + 50 &&
+        (ball.y - ball.radius < p.topHeight || ball.y + ball.radius > p.topHeight + 120)
       ) {
         loseLife();
         pipes.splice(i, 1);
         i--;
       }
 
-      // زيادة النقاط والعملات عند تجاوز الأنبوب
-      if (p.x + p.width === ball.x) {
+      // نقطة عند مرور الأنابيب
+      if (p.x + 50 === ball.x - ball.radius) {
         score++;
         coins++;
         if (score % 5 === 0) pipeSpeed += 0.3;
       }
     }
-    // إزالة الأنابيب التي خرجت عن الشاشة
-    pipes = pipes.filter(p => p.x + p.width > 0);
+
+    pipes = pipes.filter(p => p.x + 50 > 0);
   }
 
-  // رسم الخلفية مع تأثير 3D وهمي (حركة بطيئة للخلفية)
   function drawBackground() {
-    let bgX = -(frame * pipeSpeed * 0.4) % canvas.width;
-    ctx.drawImage(background, bgX, 0, canvas.width, canvas.height);
-    ctx.drawImage(background, bgX + canvas.width, 0, canvas.width, canvas.height);
+    // خلفية بسيطة مموّجة
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, "#001010");
+    gradient.addColorStop(1, "#003333");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
-  // رسم لوحة النتائج والنقاط والقلوب
   function drawScore() {
-    ctx.fillStyle = "#0ff";
-    ctx.font = "18px Tahoma";
-    ctx.shadowColor = "#0ff";
-    ctx.shadowBlur = 8;
-    ctx.fillText("النقاط: " + score, 15, 25);
-    ctx.fillText("العملات: " + coins, 15, 50);
-    ctx.fillText("❤️: " + lives, 15, 75);
-    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#00ffd5";
+    ctx.font = "20px Tahoma";
+    ctx.textAlign = "left";
+    ctx.fillText("النقاط: " + score, 10, 30);
+    ctx.fillText("العملات: " + coins, 10, 60);
+    ctx.fillText("❤️: " + lives, 10, 90);
   }
 
-  // حلقة اللعبة الرئيسية
   function gameLoop() {
     if (!gameStarted) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
-    ball.update();
+    ball.draw();
     if (frame % 90 === 0) createPipe();
     updatePipes();
     drawScore();
@@ -319,142 +247,178 @@
     requestAnimationFrame(gameLoop);
   }
 
-  // فقدان حياة عند التصادم أو الوقوع
   function loseLife() {
     lives--;
     if (lives <= 0) {
       endGame();
     } else {
-      ball.velocity = 0;
-      ball.y = 150;
+      // إعادة الكرة لموضع البداية
       ball.x = 60;
+      ball.y = canvas.height / 2;
     }
   }
 
-  // بدء اللعبة
   function startGame() {
     const playerName = playerNameInput.value.trim();
-    if (!playerName) {
-      alert("ادخل اسمك أولاً");
-      return;
-    }
+    if (!playerName) return alert("ادخل اسمك أولاً");
+
     score = 0;
     lives = 5;
     pipes = [];
     frame = 0;
     pipeSpeed = 2;
-    ball.y = 150;
+    coins = parseInt(localStorage.getItem("coins")) || 0;
     ball.x = 60;
-    ball.velocity = 0;
+    ball.y = canvas.height / 2;
     gameStarted = true;
     switchScreen(null);
+    updateDisplays();
     requestAnimationFrame(gameLoop);
   }
 
-  // انتهاء اللعبة
   function endGame() {
     gameStarted = false;
     finalScoreDisplay.innerText = score;
-    if (score > bestScore) {
-      bestScore = score;
-      localStorage.setItem("bestScore", bestScore);
-    }
-    bestScoreDisplay.innerText = bestScore;
-    coins += score; // أضف النقاط كنقود مكافأة
+    bestScore = Math.max(bestScore, score);
+    localStorage.setItem("bestScore", bestScore);
     localStorage.setItem("coins", coins);
-    coinsDisplay.innerText = `💰 ${coins}`;
+    bestScoreDisplay.innerText = bestScore;
     switchScreen(gameOverScreen);
   }
 
-  // إعادة تشغيل اللعبة
   function restartGame() {
     switchScreen(startScreen);
   }
 
-  // تبديل الشاشات
-  function switchScreen(screen) {
-    [startScreen, gameOverScreen, storeScreen].forEach(s => {
-      if (s === screen) s.classList.add("active");
-      else s.classList.remove("active");
-    });
+  function switchScreen(target) {
+    [startScreen, gameOverScreen, storeScreen].forEach(s => s.classList.remove("active"));
+    if (target) target.classList.add("active");
+    updateDisplays();
   }
 
-  // تحكم يدوي كامل بالكرة
-  window.addEventListener("keydown", (e) => {
-    if (!gameStarted) return;
-    switch(e.key) {
-      case "ArrowUp": ball.moveUp(); break;
-      case "ArrowDown": ball.moveDown(); break;
-      case "ArrowLeft": ball.moveLeft(); break;
-      case "ArrowRight": ball.moveRight(); break;
-      case " ": ball.flap(); break; // مسافة للقفز
+  function updateDisplays() {
+    coinsDisplay.innerText = `💰 ${coins}`;
+    storeCoins.innerText = coins;
+  }
+
+  // المتجر - شكل بسيط لشراء ألوان للكرة (شخصيات)
+  const colors = [
+    "#00ffd5", "#ff4c4c", "#ffd500", "#4cff4c", "#4c6cff",
+    "#ff4cff", "#ff804c", "#00ffff", "#ff00ff", "#ffff00"
+  ];
+
+  function openStore() {
+    storeItems.innerHTML = "";
+    for (let i = 0; i < colors.length; i++) {
+      const price = (i + 1) * 10;
+      const owned = ownedCharacters.includes(i);
+      const item = document.createElement("div");
+      item.className = "store-item";
+      item.innerHTML = `
+        <div style="background:${colors[i]}"></div>
+        ${owned ? "✅ مملوك" : `🪙 ${price}`}
+        <button ${owned ? "disabled" : ""} onclick="buyCharacter(${i}, ${price})">
+          شراء
+        </button>
+      `;
+      storeItems.appendChild(item);
+    }
+    switchScreen(storeScreen);
+  }
+
+  function buyCharacter(index, price) {
+    if (coins >= price && !ownedCharacters.includes(index)) {
+      coins -= price;
+      ownedCharacters.push(index);
+      localStorage.setItem("coins", coins);
+      localStorage.setItem("ownedCharacters", JSON.stringify(ownedCharacters));
+      updateDisplays();
+      openStore();
+    } else {
+      alert("لا توجد عملات كافية");
+    }
+  }
+
+  // تحكم باللمس - السحب لتحريك الكرة
+  let isDragging = false;
+  let dragOffsetX = 0;
+  let dragOffsetY = 0;
+
+  canvas.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const touchX = touch.clientX - rect.left;
+    const touchY = touch.clientY - rect.top;
+    const dx = touchX - ball.x;
+    const dy = touchY - ball.y;
+    if (Math.sqrt(dx * dx + dy * dy) < ball.radius + 10) { // حدود الالتقاط
+      isDragging = true;
+      dragOffsetX = dx;
+      dragOffsetY = dy;
     }
   });
 
-  // فتح المتجر
-  function openStore() {
-    switchScreen(storeScreen);
-    storeCoins.innerText = coins;
-    renderStore();
-  }
-  // إغلاق المتجر
-  function closeStore() {
-    switchScreen(startScreen);
-  }
+  canvas.addEventListener("touchmove", (e) => {
+    e.preventDefault();
+    if (!isDragging) return;
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    let newX = touch.clientX - rect.left - dragOffsetX;
+    let newY = touch.clientY - rect.top - dragOffsetY;
 
-  // عناصر المتجر مع الأسعار
-  const items = [
-    { id: 1, name: "شخصية 1", price: 10, imgIndex: 1 },
-    { id: 2, name: "شخصية 2", price: 20, imgIndex: 2 },
-    { id: 3, name: "شخصية 3", price: 30, imgIndex: 3 },
-    { id: 4, name: "درع حماية 1", price: 15, effect: "shield" },
-    { id: 5, name: "درع حماية 2", price: 25, effect: "shield" },
-  ];
+    // حدود تحريك الكرة داخل اللوحة
+    newX = Math.max(ball.radius, Math.min(canvas.width - ball.radius, newX));
+    newY = Math.max(ball.radius, Math.min(canvas.height - ball.radius, newY));
 
-  // عرض عناصر المتجر
-  function renderStore() {
-    storeItems.innerHTML = "";
-    items.forEach(item => {
-      let owned = ownedCharacters.includes(item.imgIndex);
-      let div = document.createElement("div");
-      div.classList.add("store-item");
-      div.innerHTML = `
-        <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed=char${item.imgIndex}" alt="${item.name}" />
-        <div>${item.name}</div>
-        <div>السعر: ${item.price} 💰</div>
-        <button ${owned ? "disabled" : ""} onclick="buyItem(${item.id})">${owned ? "مملوك" : "شراء"}</button>
-      `;
-      storeItems.appendChild(div);
-    });
-  }
+    ball.x = newX;
+    ball.y = newY;
+  });
 
-  // شراء عنصر من المتجر
-  function buyItem(id) {
-    const item = items.find(i => i.id === id);
-    if (!item) return;
-    if (coins < item.price) {
-      alert("ليس لديك عملات كافية!");
-      return;
+  canvas.addEventListener("touchend", (e) => {
+    e.preventDefault();
+    isDragging = false;
+  });
+
+  // لمنصة سطح المكتب (فأرة)
+  canvas.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const dx = mouseX - ball.x;
+    const dy = mouseY - ball.y;
+    if (Math.sqrt(dx * dx + dy * dy) < ball.radius + 10) {
+      isDragging = true;
+      dragOffsetX = dx;
+      dragOffsetY = dy;
     }
-    coins -= item.price;
-    localStorage.setItem("coins", coins);
-    storeCoins.innerText = coins;
+  });
 
-    if (item.imgIndex !== undefined) {
-      if (!ownedCharacters.includes(item.imgIndex)) {
-        ownedCharacters.push(item.imgIndex);
-        localStorage.setItem("ownedCharacters", JSON.stringify(ownedCharacters));
-      }
-      selectedCharacter = item.imgIndex;
-    }
-    alert("تم الشراء بنجاح!");
-    renderStore();
-  }
+  canvas.addEventListener("mousemove", (e) => {
+    e.preventDefault();
+    if (!isDragging) return;
+    const rect = canvas.getBoundingClientRect();
+    let newX = e.clientX - rect.left - dragOffsetX;
+    let newY = e.clientY - rect.top - dragOffsetY;
 
-  // تحديث عرض العملات عند بدء اللعبة
-  coinsDisplay.innerText = `💰 ${coins}`;
+    newX = Math.max(ball.radius, Math.min(canvas.width - ball.radius, newX));
+    newY = Math.max(ball.radius, Math.min(canvas.height - ball.radius, newY));
+
+    ball.x = newX;
+    ball.y = newY;
+  });
+
+  canvas.addEventListener("mouseup", (e) => {
+    e.preventDefault();
+    isDragging = false;
+  });
+
+  canvas.addEventListener("mouseleave", (e) => {
+    e.preventDefault();
+    isDragging = false;
+  });
 
 </script>
-
 </body>
 </html>
