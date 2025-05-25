@@ -2,423 +2,446 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Flappy Ball - تحكم باللمس</title>
+  <title>Flappy Ball 3D - لعبة متكاملة مع متجر وإحصائيات</title>
   <style>
-    * {
-      margin: 0; padding: 0; box-sizing: border-box;
-      font-family: 'Tahoma', sans-serif;
-    }
     body {
-      background: #111;
-      color: #fff;
-      text-align: center;
+      margin: 0;
+      overflow: hidden;
+      font-family: Tahoma, sans-serif;
+      background: #000;
+      color: white;
       user-select: none;
-      touch-action: none; /* مهم لمنع السحب الافتراضي */
+      direction: rtl;
     }
-    canvas {
-      background: linear-gradient(135deg, #1e1e1e 0%, #121212 100%);
-      display: block;
-      margin: 20px auto;
-      border: 3px solid #00ffd5;
-      border-radius: 12px;
-      box-shadow: 0 0 15px #00ffd5;
-      touch-action: none; /* مهم */
-    }
-    .screen {
-      display: none;
-      padding: 20px;
-    }
-    .screen.active {
-      display: block;
-    }
-    input {
-      padding: 10px;
-      margin: 10px auto;
-      width: 200px;
-      font-size: 16px;
-      border-radius: 6px;
-      border: 1.5px solid #00ffd5;
-      background: #222;
-      color: #0ff;
-      text-align: center;
-      outline: none;
-      transition: 0.3s;
-    }
-    input:focus {
-      border-color: #00ffab;
-      box-shadow: 0 0 6px #00ffab;
-    }
-    button {
-      padding: 12px 25px;
-      font-size: 18px;
-      margin: 10px;
-      cursor: pointer;
-      border-radius: 8px;
-      border: none;
-      background: #00ffd5;
-      color: #000;
-      font-weight: bold;
-      transition: background 0.3s;
-    }
-    button:hover {
-      background: #00ffab;
-    }
-    #coinsDisplay {
-      font-size: 20px;
-      margin-top: 10px;
-      color: #0ff;
-    }
-    #storeItems {
+    #overlay {
+      position: absolute;
+      top: 0; right: 0; left: 0; bottom: 0;
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
+      align-items: center;
       justify-content: center;
-      gap: 15px;
-      margin-top: 15px;
+      background: rgba(0,0,0,0.85);
+      z-index: 10;
     }
-    .store-item {
-      background: #222;
-      padding: 12px;
-      border-radius: 10px;
-      width: 110px;
-      color: #0ff;
-      box-shadow: 0 0 8px #00ffd5aa;
+    #gameUI {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 8;
+      font-size: 18px;
       user-select: none;
+      background: rgba(0,0,0,0.4);
+      padding: 8px 15px;
+      border-radius: 10px;
+      max-width: 250px;
     }
-    .store-item div {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      margin-bottom: 8px;
-      filter: drop-shadow(0 0 3px #00ffd5);
+    #gameUI > div {
+      margin-bottom: 6px;
     }
-    .store-item button {
-      width: 100%;
-      margin-top: 6px;
-      background: #008f7f;
-      color: #0ff;
-      font-weight: bold;
+    button, select {
+      margin: 10px 5px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
       border-radius: 6px;
       border: none;
-      cursor: pointer;
+      outline: none;
+      background: #222;
+      color: white;
       transition: background 0.3s;
     }
-    .store-item button:hover {
-      background: #00ffd5;
-      color: #000;
+    button:hover, select:hover {
+      background: #555;
+    }
+    #store {
+      position: absolute;
+      bottom: 20px;
+      right: 50%;
+      transform: translateX(50%);
+      background: rgba(20,20,20,0.8);
+      padding: 10px 20px;
+      border-radius: 10px;
+      display: flex;
+      gap: 15px;
+      z-index: 8;
+      user-select: none;
+      max-width: 90vw;
+      overflow-x: auto;
+    }
+    #store button {
+      background: #444;
+      min-width: 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 14px;
+      gap: 6px;
+    }
+    #store button.active {
+      background: #008800;
+    }
+    #gameCanvas {
+      display: block;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      touch-action: none;
+    }
+    #leaderboard {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.6);
+      padding: 10px 15px;
+      border-radius: 10px;
+      max-width: 300px;
+      font-size: 16px;
+      z-index: 9;
+      user-select: none;
+    }
+    #leaderboard h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #555;
+      padding-bottom: 5px;
+    }
+    #leaderboard ol {
+      padding-left: 20px;
+      margin: 0;
     }
   </style>
 </head>
 <body>
 
-<canvas id="gameCanvas" width="360" height="480"></canvas>
-
-<div id="startScreen" class="screen active">
-  <h2>مرحبًا بك في Flappy Ball</h2>
-  <input type="text" id="playerName" placeholder="ادخل اسمك" maxlength="15" />
-  <div id="coinsDisplay">💰 0</div>
+<div id="overlay">
+  <h1>Flappy Ball 3D</h1>
+  <input type="text" id="playerName" placeholder="ادخل اسمك" style="padding:10px; font-size:16px; width: 250px;">
   <button onclick="startGame()">ابدأ اللعبة</button>
-  <button onclick="openStore()">المتجر</button>
-  <p>حرك الكرة بالسحب على الشاشة</p>
 </div>
 
-<div id="gameOverScreen" class="screen">
-  <h2>انتهت اللعبة</h2>
-  <p>نتيجتك: <span id="finalScore"></span></p>
-  <p>أفضل نتيجة: <span id="bestScore"></span></p>
-  <button onclick="restartGame()">إعادة</button>
+<div id="gameUI" style="display:none;">
+  <div>اللاعب: <span id="displayName"></span></div>
+  <div>🏆 النقاط: <span id="score">0</span></div>
+  <div>💰 العملات: <span id="coins">0</span></div>
+  <div>📊 أعلى نتيجة: <span id="bestScore">0</span></div>
+  <div>🎯 إجمالي النقاط: <span id="totalScore">0</span></div>
+  <div>💵 إجمالي العملات: <span id="totalCoins">0</span></div>
 </div>
 
-<div id="storeScreen" class="screen">
-  <h2>المتجر</h2>
-  <p>💰 <span id="storeCoins">0</span></p>
-  <div id="storeItems"></div>
-  <button onclick="closeStore()">رجوع</button>
+<div id="store" style="display:none;">
+  <!-- الأزرار سيتم توليدها بالـJS -->
 </div>
 
+<div id="leaderboard" style="display:none;">
+  <h3>لوحة الأفضلية</h3>
+  <ol id="leaderboardList"></ol>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r148/three.min.js"></script>
 <script>
-  const canvas = document.getElementById("gameCanvas");
-  const ctx = canvas.getContext("2d");
+  let scene, camera, renderer;
+  let player, obstacles = [];
+  let score = 0, coins = 0;
+  let velocity = 0.06, gameStarted = false;
+  let isDragging = false, lastTouchX = 0;
+  let playerName = "";
+  let selectedModel = 'sphere';
+  let ballColor = '#ff3333';
+  let obstacleTimer, bgHue = 0;
+  let currentStage = 0;
 
-  const startScreen = document.getElementById("startScreen");
-  const gameOverScreen = document.getElementById("gameOverScreen");
-  const storeScreen = document.getElementById("storeScreen");
-  const finalScoreDisplay = document.getElementById("finalScore");
-  const bestScoreDisplay = document.getElementById("bestScore");
-  const coinsDisplay = document.getElementById("coinsDisplay");
-  const storeCoins = document.getElementById("storeCoins");
-  const storeItems = document.getElementById("storeItems");
-  const playerNameInput = document.getElementById("playerName");
-
-  let gameStarted = false;
-  let score = 0;
-  let bestScore = parseInt(localStorage.getItem("bestScore")) || 0;
-  let coins = parseInt(localStorage.getItem("coins")) || 0;
-  let selectedCharacter = 0;
-  let ownedCharacters = JSON.parse(localStorage.getItem("ownedCharacters")) || [0];
-  let pipes = [];
-  let frame = 0;
-  let pipeSpeed = 2;
-  let lives = 5;
-
-  // الكرة = الشخصية (دائرة بدلاً من صورة طير)
-  const ball = {
-    x: 60,
-    y: 240,
-    radius: 20,
-    color: "#00ffd5",
-    draw: function () {
-      ctx.beginPath();
-      ctx.fillStyle = this.color;
-      ctx.shadowColor = this.color;
-      ctx.shadowBlur = 12;
-      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.closePath();
-    }
+  const sounds = {
+    coin: new Audio('https://freesound.org/data/previews/341/341695_6247035-lq.mp3'),
+    hit: new Audio('https://freesound.org/data/previews/256/256113_3263906-lq.mp3'),
+    move: new Audio('https://freesound.org/data/previews/235/235940_3988707-lq.mp3')
   };
-
-  function createPipe() {
-    let topHeight = Math.floor(Math.random() * 180) + 50;
-    pipes.push({ x: canvas.width, topHeight });
+  for (let key in sounds) {
+    sounds[key].volume = 0.2;
   }
 
-  function updatePipes() {
-    for (let i = 0; i < pipes.length; i++) {
-      let p = pipes[i];
-      p.x -= pipeSpeed;
+  const overlay = document.getElementById('overlay');
+  const scoreDisplay = document.getElementById('score');
+  const coinsDisplay = document.getElementById('coins');
+  const gameUI = document.getElementById('gameUI');
+  const displayName = document.getElementById('displayName');
+  const store = document.getElementById('store');
+  const leaderboardDiv = document.getElementById('leaderboard');
+  const leaderboardList = document.getElementById('leaderboardList');
+  const bestScoreDisplay = document.getElementById('bestScore');
+  const totalScoreDisplay = document.getElementById('totalScore');
+  const totalCoinsDisplay = document.getElementById('totalCoins');
 
-      // أنابيب (مستطيلات)
-      ctx.fillStyle = "#00bb44";
-      ctx.shadowColor = "#00bb44";
-      ctx.shadowBlur = 8;
-      ctx.fillRect(p.x, 0, 50, p.topHeight);
-      ctx.fillRect(p.x, p.topHeight + 120, 50, canvas.height - p.topHeight - 120);
+  // موديلات شخصيات 3D
+  function createModel(type, color) {
+    if(player) scene.remove(player);
+    let geometry;
+    switch(type){
+      case 'sphere':
+        geometry = new THREE.SphereGeometry(0.5, 32, 32);
+        break;
+      case 'cube':
+        geometry = new THREE.BoxGeometry(1,1,1);
+        break;
+      case 'cone':
+        geometry = new THREE.ConeGeometry(0.5, 1, 32);
+        break;
+      default:
+        geometry = new THREE.SphereGeometry(0.5, 32, 32);
+    }
+    const material = new THREE.MeshStandardMaterial({ color });
+    player = new THREE.Mesh(geometry, material);
+    player.position.z = -5;
+    player.position.y = 0;
+    player.position.x = 0;
+    scene.add(player);
+  }
 
-      // تصادم الكرة مع الأنابيب
-      if (
-        ball.x + ball.radius > p.x &&
-        ball.x - ball.radius < p.x + 50 &&
-        (ball.y - ball.radius < p.topHeight || ball.y + ball.radius > p.topHeight + 120)
-      ) {
-        loseLife();
-        pipes.splice(i, 1);
-        i--;
-      }
+  function init(){
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({canvas: document.getElementById('gameCanvas'), antialias: true});
+    renderer.setSize(window.innerWidth, window.innerHeight);
 
-      // نقطة عند مرور الأنابيب
-      if (p.x + 50 === ball.x - ball.radius) {
+    const light = new THREE.PointLight(0xffffff, 1.2, 100);
+    light.position.set(10, 10, 10);
+    scene.add(light);
+
+    const ambient = new THREE.AmbientLight(0x404040);
+    scene.add(ambient);
+
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(50, 50),
+      new THREE.MeshStandardMaterial({ color: 0x222222, side: THREE.DoubleSide })
+    );
+    ground.rotation.x = Math.PI / 2;
+    ground.position.y = -2;
+    scene.add(ground);
+
+    createModel(selectedModel, ballColor);
+
+    camera.position.z = 7;
+  }
+
+  function createObstacle() {
+    const height = Math.random() * 3 + 1;
+    const geometry = new THREE.BoxGeometry(1, height, 1);
+    const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+    const obstacle = new THREE.Mesh(geometry, material);
+    obstacle.position.z = -5;
+    obstacle.position.x = (Math.random() - 0.5) * 6;
+    obstacle.position.y = 4 + height / 2;
+    scene.add(obstacle);
+    obstacles.push(obstacle);
+  }
+
+  function updateObstacles() {
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+      obstacles[i].position.y -= velocity;
+      if (obstacles[i].position.y < -3) {
+        scene.remove(obstacles[i]);
+        obstacles.splice(i, 1);
         score++;
         coins++;
-        if (score % 5 === 0) pipeSpeed += 0.3;
+        updateUI();
+        playSound('coin');
+        if(score % 30 === 0) {
+          nextStage();
+        }
       }
     }
-
-    pipes = pipes.filter(p => p.x + 50 > 0);
   }
 
-  function drawBackground() {
-    // خلفية بسيطة مموّجة
-    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, "#001010");
-    gradient.addColorStop(1, "#003333");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  function nextStage() {
+    currentStage++;
+    bgHue = (bgHue + 120) % 360;
+    alert("مرحلة جديدة! " + (currentStage + 1));
   }
 
-  function drawScore() {
-    ctx.fillStyle = "#00ffd5";
-    ctx.font = "20px Tahoma";
-    ctx.textAlign = "left";
-    ctx.fillText("النقاط: " + score, 10, 30);
-    ctx.fillText("العملات: " + coins, 10, 60);
-    ctx.fillText("❤️: " + lives, 10, 90);
-  }
-
-  function gameLoop() {
-    if (!gameStarted) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawBackground();
-    ball.draw();
-    if (frame % 90 === 0) createPipe();
-    updatePipes();
-    drawScore();
-    frame++;
-    requestAnimationFrame(gameLoop);
-  }
-
-  function loseLife() {
-    lives--;
-    if (lives <= 0) {
-      endGame();
-    } else {
-      // إعادة الكرة لموضع البداية
-      ball.x = 60;
-      ball.y = canvas.height / 2;
+  function checkCollision() {
+    for (let obs of obstacles) {
+      const dx = player.position.x - obs.position.x;
+      const dy = player.position.y - obs.position.y;
+      if (Math.abs(dx) < 0.75 && Math.abs(dy) < obs.geometry.parameters.height / 2 + 0.5) {
+        gameOver();
+        return;
+      }
     }
   }
 
-  function startGame() {
-    const playerName = playerNameInput.value.trim();
-    if (!playerName) return alert("ادخل اسمك أولاً");
-
-    score = 0;
-    lives = 5;
-    pipes = [];
-    frame = 0;
-    pipeSpeed = 2;
-    coins = parseInt(localStorage.getItem("coins")) || 0;
-    ball.x = 60;
-    ball.y = canvas.height / 2;
-    gameStarted = true;
-    switchScreen(null);
-    updateDisplays();
-    requestAnimationFrame(gameLoop);
-  }
-
-  function endGame() {
+  function gameOver() {
     gameStarted = false;
-    finalScoreDisplay.innerText = score;
-    bestScore = Math.max(bestScore, score);
-    localStorage.setItem("bestScore", bestScore);
-    localStorage.setItem("coins", coins);
-    bestScoreDisplay.innerText = bestScore;
-    switchScreen(gameOverScreen);
+    clearInterval(obstacleTimer);
+    saveScore();
+    overlay.style.display = 'flex';
+    leaderboardDiv.style.display = 'block';
+    updateLeaderboard();
+    alert('انتهت اللعبة! نتيجتك: ' + score);
   }
 
-  function restartGame() {
-    switchScreen(startScreen);
+  function updateUI(){
+    scoreDisplay.textContent = score;
+    coinsDisplay.textContent = coins;
+    const bestScore = Math.max(score, getBestScore());
+    bestScoreDisplay.textContent = bestScore;
+    totalScoreDisplay.textContent = getTotalScore();
+    totalCoinsDisplay.textContent = getTotalCoins();
   }
 
-  function switchScreen(target) {
-    [startScreen, gameOverScreen, storeScreen].forEach(s => s.classList.remove("active"));
-    if (target) target.classList.add("active");
-    updateDisplays();
+  function getBestScore() {
+    return parseInt(localStorage.getItem('bestScore') || '0');
   }
 
-  function updateDisplays() {
-    coinsDisplay.innerText = `💰 ${coins}`;
-    storeCoins.innerText = coins;
+  function getTotalScore() {
+    return parseInt(localStorage.getItem('totalScore') || '0');
   }
 
-  // المتجر - شكل بسيط لشراء ألوان للكرة (شخصيات)
-  const colors = [
-    "#00ffd5", "#ff4c4c", "#ffd500", "#4cff4c", "#4c6cff",
-    "#ff4cff", "#ff804c", "#00ffff", "#ff00ff", "#ffff00"
+  function getTotalCoins() {
+    return parseInt(localStorage.getItem('totalCoins') || '0');
+  }
+
+  function saveScore() {
+    let best = getBestScore();
+    if(score > best) {
+      localStorage.setItem('bestScore', score);
+    }
+    let total = getTotalScore() + score;
+    localStorage.setItem('totalScore', total);
+    let totalC = getTotalCoins() + coins;
+    localStorage.setItem('totalCoins', totalC);
+
+    saveLeaderboardScore(playerName, score);
+  }
+
+  // لوحة الأفضلية
+  function saveLeaderboardScore(name, score) {
+    if (!name) return;
+    let leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
+    leaderboard.push({name, score});
+    leaderboard.sort((a,b) => b.score - a.score);
+    leaderboard = leaderboard.slice(0,5); // أعلى 5 فقط
+    localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
+  }
+
+  function updateLeaderboard() {
+    const leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
+    leaderboardList.innerHTML = '';
+    leaderboard.forEach((entry, index) => {
+      const li = document.createElement('li');
+      li.textContent = `${entry.name}: ${entry.score}`;
+      leaderboardList.appendChild(li);
+    });
+  }
+
+  // متجر شخصيات 3D
+  const characters = [
+    {type:'sphere', color:'#ff3333', name:'الكرة الحمراء', price:0},
+    {type:'cube', color:'#33ff33', name:'المكعب الأخضر', price:20},
+    {type:'cone', color:'#3333ff', name:'المخروط الأزرق', price:30},
   ];
 
-  function openStore() {
-    storeItems.innerHTML = "";
-    for (let i = 0; i < colors.length; i++) {
-      const price = (i + 1) * 10;
-      const owned = ownedCharacters.includes(i);
-      const item = document.createElement("div");
-      item.className = "store-item";
-      item.innerHTML = `
-        <div style="background:${colors[i]}"></div>
-        ${owned ? "✅ مملوك" : `🪙 ${price}`}
-        <button ${owned ? "disabled" : ""} onclick="buyCharacter(${i}, ${price})">
-          شراء
-        </button>
-      `;
-      storeItems.appendChild(item);
-    }
-    switchScreen(storeScreen);
+  function buildStore() {
+    store.innerHTML = '';
+    characters.forEach((char, i) => {
+      const btn = document.createElement('button');
+      btn.textContent = char.name + (char.price > 0 ? ` - ${char.price} عملة` : ' - مجاني');
+      btn.style.color = char.color;
+      if(char.type === selectedModel && char.color === ballColor) {
+        btn.classList.add('active');
+      }
+      btn.onclick = () => {
+        if(char.price > 0 && coins < char.price) {
+          alert('لا توجد لديك عملات كافية!');
+          return;
+        }
+        if(char.price > 0) {
+          coins -= char.price;
+          updateUI();
+        }
+        selectedModel = char.type;
+        ballColor = char.color;
+        createModel(selectedModel, ballColor);
+        Array.from(store.children).forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      };
+      store.appendChild(btn);
+    });
   }
 
-  function buyCharacter(index, price) {
-    if (coins >= price && !ownedCharacters.includes(index)) {
-      coins -= price;
-      ownedCharacters.push(index);
-      localStorage.setItem("coins", coins);
-      localStorage.setItem("ownedCharacters", JSON.stringify(ownedCharacters));
-      updateDisplays();
-      openStore();
-    } else {
-      alert("لا توجد عملات كافية");
-    }
+  // التحكم بالسحب
+  function onPointerDown(e) {
+    isDragging = true;
+    lastTouchX = e.clientX || e.touches[0].clientX;
+  }
+  function onPointerMove(e) {
+    if(!isDragging) return;
+    const x = e.clientX || e.touches[0].clientX;
+    let delta = (x - lastTouchX) / window.innerWidth * 10;
+    player.position.x += delta;
+    player.position.x = Math.min(Math.max(player.position.x, -3), 3);
+    lastTouchX = x;
+  }
+  function onPointerUp() {
+    isDragging = false;
   }
 
-  // تحكم باللمس - السحب لتحريك الكرة
-  let isDragging = false;
-  let dragOffsetX = 0;
-  let dragOffsetY = 0;
+  function animate() {
+    if(gameStarted) {
+      updateObstacles();
+      checkCollision();
 
-  canvas.addEventListener("touchstart", (e) => {
-    e.preventDefault();
-    const touch = e.touches[0];
-    const rect = canvas.getBoundingClientRect();
-    const touchX = touch.clientX - rect.left;
-    const touchY = touch.clientY - rect.top;
-    const dx = touchX - ball.x;
-    const dy = touchY - ball.y;
-    if (Math.sqrt(dx * dx + dy * dy) < ball.radius + 10) { // حدود الالتقاط
-      isDragging = true;
-      dragOffsetX = dx;
-      dragOffsetY = dy;
+      bgHue += 0.5;
+      document.body.style.background = `hsl(${bgHue}, 60%, 10%)`;
     }
-  });
 
-  canvas.addEventListener("touchmove", (e) => {
-    e.preventDefault();
-    if (!isDragging) return;
-    const touch = e.touches[0];
-    const rect = canvas.getBoundingClientRect();
-    let newX = touch.clientX - rect.left - dragOffsetX;
-    let newY = touch.clientY - rect.top - dragOffsetY;
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+  }
 
-    // حدود تحريك الكرة داخل اللوحة
-    newX = Math.max(ball.radius, Math.min(canvas.width - ball.radius, newX));
-    newY = Math.max(ball.radius, Math.min(canvas.height - ball.radius, newY));
-
-    ball.x = newX;
-    ball.y = newY;
-  });
-
-  canvas.addEventListener("touchend", (e) => {
-    e.preventDefault();
-    isDragging = false;
-  });
-
-  // لمنصة سطح المكتب (فأرة)
-  canvas.addEventListener("mousedown", (e) => {
-    e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    const dx = mouseX - ball.x;
-    const dy = mouseY - ball.y;
-    if (Math.sqrt(dx * dx + dy * dy) < ball.radius + 10) {
-      isDragging = true;
-      dragOffsetX = dx;
-      dragOffsetY = dy;
+  function startGame(){
+    const input = document.getElementById('playerName');
+    if(!input.value.trim()) {
+      alert('يرجى إدخال الاسم');
+      return;
     }
+    playerName = input.value.trim();
+    overlay.style.display = 'none';
+    gameUI.style.display = 'block';
+    store.style.display = 'flex';
+    leaderboardDiv.style.display = 'block';
+    score = 0;
+    coins = 0;
+    currentStage = 0;
+    updateUI();
+    buildStore();
+    createModel(selectedModel, ballColor);
+    obstacles.forEach(o => scene.remove(o));
+    obstacles = [];
+    gameStarted = true;
+    obstacleTimer = setInterval(createObstacle, 1000);
+
+    displayName.textContent = playerName;
+  }
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
-  canvas.addEventListener("mousemove", (e) => {
-    e.preventDefault();
-    if (!isDragging) return;
-    const rect = canvas.getBoundingClientRect();
-    let newX = e.clientX - rect.left - dragOffsetX;
-    let newY = e.clientY - rect.top - dragOffsetY;
+  window.addEventListener('mousedown', onPointerDown);
+  window.addEventListener('mousemove', onPointerMove);
+  window.addEventListener('mouseup', onPointerUp);
+  window.addEventListener('touchstart', onPointerDown);
+  window.addEventListener('touchmove', onPointerMove);
+  window.addEventListener('touchend', onPointerUp);
 
-    newX = Math.max(ball.radius, Math.min(canvas.width - ball.radius, newX));
-    newY = Math.max(ball.radius, Math.min(canvas.height - ball.radius, newY));
-
-    ball.x = newX;
-    ball.y = newY;
-  });
-
-  canvas.addEventListener("mouseup", (e) => {
-    e.preventDefault();
-    isDragging = false;
-  });
-
-  canvas.addEventListener("mouseleave", (e) => {
-    e.preventDefault();
-    isDragging = false;
-  });
-
+  init();
+  animate();
 </script>
+
 </body>
 </html>
