@@ -1,447 +1,366 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <title>Flappy Ball 3D - لعبة متكاملة مع متجر وإحصائيات</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Yacine TV 3D</title>
   <style>
     body {
       margin: 0;
-      overflow: hidden;
-      font-family: Tahoma, sans-serif;
-      background: #000;
-      color: white;
-      user-select: none;
-      direction: rtl;
+      font-family: sans-serif;
+      background-color: #00d9dd;
+      perspective: 1000px;
+      overflow-x: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
-    #overlay {
+
+    body.dark-mode {
+      background-color: #111;
+      color: #00d9dd;
+    }
+
+    header {
+      background-color: #00d9dd;
+      color: black;
+      padding: 15px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      position: relative;
+      transform: rotateX(0deg);
+      transition: all 0.6s ease;
+    }
+
+    body.dark-mode header {
+      background-color: #222;
+      color: #00d9dd;
+    }
+
+    .menu-btn {
       position: absolute;
-      top: 0; right: 0; left: 0; bottom: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,0.85);
-      z-index: 10;
-    }
-    #gameUI {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 8;
-      font-size: 18px;
-      user-select: none;
-      background: rgba(0,0,0,0.4);
-      padding: 8px 15px;
-      border-radius: 10px;
-      max-width: 250px;
-    }
-    #gameUI > div {
-      margin-bottom: 6px;
-    }
-    button, select {
-      margin: 10px 5px;
-      padding: 10px 20px;
-      font-size: 16px;
+      left: 15px;
+      top: 15px;
+      font-size: 24px;
       cursor: pointer;
-      border-radius: 6px;
-      border: none;
-      outline: none;
-      background: #222;
-      color: white;
-      transition: background 0.3s;
     }
-    button:hover, select:hover {
-      background: #555;
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -260px;
+      width: 250px;
+      height: 100%;
+      background-color: #00f0f5;
+      color: black;
+      transition: 0.6s ease;
+      z-index: 1000;
+      padding-top: 60px;
+      box-shadow: 5px 0 10px rgba(0,0,0,0.2);
+      transform: rotateY(60deg);
     }
-    #store {
+
+    .sidebar.open-sidebar {
+      left: 0;
+      transform: rotateY(0deg);
+    }
+
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      padding: 15px;
+      text-decoration: none;
+      color: black;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .section-title {
+      background-color: black;
+      color: #00d9dd;
+      padding: 10px;
+      margin: 10px;
+      text-align: center;
+      border-radius: 5px;
+      font-size: 20px;
+    }
+
+    .channel-link {
+      display: block;
+      background-color: black;
+      color: #00d9dd;
+      text-decoration: none;
+      padding: 12px;
+      margin: 10px;
+      border-radius: 5px;
+      font-size: 18px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+      position: relative;
+    }
+
+    .channel-link:hover {
+      transform: scale(1.05) rotateY(5deg);
+    }
+
+    .channel-link.favorite {
+      border: 2px solid gold;
+    }
+
+    .favorite-btn {
       position: absolute;
-      bottom: 20px;
-      right: 50%;
-      transform: translateX(50%);
-      background: rgba(20,20,20,0.8);
+      left: 10px;
+      top: 8px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    video {
+      width: 100%;
+      max-height: 300px;
+      background: black;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background-color: #00d9dd;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      z-index: 1000;
+    }
+
+    .bottom-nav button {
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .content {
+      padding-bottom: 250px;
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: black;
+      color: #00d9dd;
       padding: 10px 20px;
       border-radius: 10px;
-      display: flex;
-      gap: 15px;
-      z-index: 8;
-      user-select: none;
-      max-width: 90vw;
-      overflow-x: auto;
-    }
-    #store button {
-      background: #444;
-      min-width: 120px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-size: 14px;
-      gap: 6px;
-    }
-    #store button.active {
-      background: #008800;
-    }
-    #gameCanvas {
-      display: block;
-      position: absolute;
-      top: 0; left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 1;
-      touch-action: none;
-    }
-    #leaderboard {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: rgba(0,0,0,0.6);
-      padding: 10px 15px;
-      border-radius: 10px;
-      max-width: 300px;
       font-size: 16px;
-      z-index: 9;
-      user-select: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      z-index: 2000;
     }
-    #leaderboard h3 {
-      margin-top: 0;
-      margin-bottom: 10px;
-      border-bottom: 1px solid #555;
-      padding-bottom: 5px;
+
+    .notification.show {
+      opacity: 1;
     }
-    #leaderboard ol {
-      padding-left: 20px;
-      margin: 0;
+
+    .search-bar, .category-selector {
+      margin: 10px;
+      text-align: center;
+    }
+
+    .search-bar input, .category-selector select {
+      padding: 8px;
+      width: 80%;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
+    }
+
+    .viewer-counter {
+      text-align: center;
+      margin: 10px;
+      font-size: 18px;
+    }
+
+    .comments {
+      padding: 20px;
+    }
+
+    .comments textarea {
+      width: 100%;
+      height: 60px;
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      font-size: 14px;
+    }
+
+    .comments button {
+      margin-top: 10px;
+      padding: 8px 16px;
+      font-size: 14px;
+      border: none;
+      border-radius: 8px;
+      background-color: black;
+      color: #00d9dd;
+      cursor: pointer;
+    }
+
+    .comment-box {
+      background-color: #eee;
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    body.dark-mode .comment-box {
+      background-color: #222;
     }
   </style>
 </head>
 <body>
 
-<div id="overlay">
-  <h1>Flappy Ball 3D</h1>
-  <input type="text" id="playerName" placeholder="ادخل اسمك" style="padding:10px; font-size:16px; width: 250px;">
-  <button onclick="startGame()">ابدأ اللعبة</button>
-</div>
+  <div class="notification" id="notification">جاري تشغيل القناة...</div>
 
-<div id="gameUI" style="display:none;">
-  <div>اللاعب: <span id="displayName"></span></div>
-  <div>🏆 النقاط: <span id="score">0</span></div>
-  <div>💰 العملات: <span id="coins">0</span></div>
-  <div>📊 أعلى نتيجة: <span id="bestScore">0</span></div>
-  <div>🎯 إجمالي النقاط: <span id="totalScore">0</span></div>
-  <div>💵 إجمالي العملات: <span id="totalCoins">0</span></div>
-</div>
+  <div class="sidebar" id="sidebar">
+    <a href="#"><i>👑</i> Premium</a>
+    <a href="#"><i>✉️</i> Contact us</a>
+    <a href="#"><i>💬</i> Messenger</a>
+    <a href="#"><i>📘</i> Facebook</a>
+    <a href="#"><i>📺</i> YouTube</a>
+    <a href="#"><i>📢</i> Telegram</a>
+    <a href="#"><i>📤</i> Share app</a>
+  </div>
 
-<div id="store" style="display:none;">
-  <!-- الأزرار سيتم توليدها بالـJS -->
-</div>
+  <header>
+    <span class="menu-btn" onclick="toggleSidebar()">☰</span>
+    Yacine TV
+    <button onclick="toggleDarkMode()" style="position:absolute; right:15px; top:15px;">🌓</button>
+  </header>
 
-<div id="leaderboard" style="display:none;">
-  <h3>لوحة الأفضلية</h3>
-  <ol id="leaderboardList"></ol>
-</div>
+  <div class="viewer-counter" id="viewerCount">👥 1200 مشاهد</div>
 
-<canvas id="gameCanvas"></canvas>
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="🔍 ابحث عن قناة..." oninput="filterChannels()" />
+  </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r148/three.min.js"></script>
-<script>
-  let scene, camera, renderer;
-  let player, obstacles = [];
-  let score = 0, coins = 0;
-  let velocity = 0.06, gameStarted = false;
-  let isDragging = false, lastTouchX = 0;
-  let playerName = "";
-  let selectedModel = 'sphere';
-  let ballColor = '#ff3333';
-  let obstacleTimer, bgHue = 0;
-  let currentStage = 0;
+  <div class="category-selector">
+    <select onchange="filterCategory(this.value)">
+      <option value="all">جميع الفئات</option>
+      <option value="الأردن">🇯🇴 الأردن</option>
+      <option value="الإمارات">🇦🇪 الإمارات</option>
+      <option value="الجزائر">🇩🇿 الجزائر</option>
+    </select>
+  </div>
 
-  const sounds = {
-    coin: new Audio('https://freesound.org/data/previews/341/341695_6247035-lq.mp3'),
-    hit: new Audio('https://freesound.org/data/previews/256/256113_3263906-lq.mp3'),
-    move: new Audio('https://freesound.org/data/previews/235/235940_3988707-lq.mp3')
-  };
-  for (let key in sounds) {
-    sounds[key].volume = 0.2;
-  }
+  <div class="content" id="channelContainer">
+    <video id="player" controls autoplay></video>
 
-  const overlay = document.getElementById('overlay');
-  const scoreDisplay = document.getElementById('score');
-  const coinsDisplay = document.getElementById('coins');
-  const gameUI = document.getElementById('gameUI');
-  const displayName = document.getElementById('displayName');
-  const store = document.getElementById('store');
-  const leaderboardDiv = document.getElementById('leaderboard');
-  const leaderboardList = document.getElementById('leaderboardList');
-  const bestScoreDisplay = document.getElementById('bestScore');
-  const totalScoreDisplay = document.getElementById('totalScore');
-  const totalCoinsDisplay = document.getElementById('totalCoins');
+    <div class="section-title" data-category="الأردن">🇯🇴 قنوات الأردن</div>
+    <div class="channel-link" data-category="الأردن" onclick="playStream('https://jrtv-live.ercdn.net/jordanhd/jordanhd.m3u8', 'الأردنية')">
+      الأردنية <span class="favorite-btn" onclick="toggleFavorite(event, this)">❤️</span>
+    </div>
+    <div class="channel-link" data-category="الأردن" onclick="playStream('https://royatv-live.daioncdn.net/royatv/royatv.m3u8', 'رؤيا')">
+      رؤيـــا <span class="favorite-btn" onclick="toggleFavorite(event, this)">❤️</span>
+    </div>
 
-  // موديلات شخصيات 3D
-  function createModel(type, color) {
-    if(player) scene.remove(player);
-    let geometry;
-    switch(type){
-      case 'sphere':
-        geometry = new THREE.SphereGeometry(0.5, 32, 32);
-        break;
-      case 'cube':
-        geometry = new THREE.BoxGeometry(1,1,1);
-        break;
-      case 'cone':
-        geometry = new THREE.ConeGeometry(0.5, 1, 32);
-        break;
-      default:
-        geometry = new THREE.SphereGeometry(0.5, 32, 32);
+    <div class="section-title" data-category="الإمارات">🇦🇪 قنوات الإمارات</div>
+    <div class="channel-link" data-category="الإمارات" onclick="playStream('https://vo-live-media.cdb.cdn.orange.com/Content/Channel/AbuDhabiChannel/HLS/index.m3u8', 'أبوظبي')">
+      أبوظبي <span class="favorite-btn" onclick="toggleFavorite(event, this)">❤️</span>
+    </div>
+    <div class="channel-link" data-category="الإمارات" onclick="playStream('https://vo-live-media.cdb.cdn.orange.com/Content/Channel/YASSportsChannel/HLS/index.m3u8', 'ياس')">
+      ياس <span class="favorite-btn" onclick="toggleFavorite(event, this)">❤️</span>
+    </div>
+
+    <div class="section-title" data-category="الجزائر">🇩🇿 قنوات الجزائر</div>
+    <div class="channel-link" data-category="الجزائر" onclick="playStream('https://live.radioalgerie.dz/algerie-tv-1.m3u8', 'الجزائر الأولى')">
+      الجزائر الأولى <span class="favorite-btn" onclick="toggleFavorite(event, this)">❤️</span>
+    </div>
+    <div class="channel-link" data-category="الجزائر" onclick="playStream('https://live.radioalgerie.dz/algerie-tv-2.m3u8', 'الجزائر الثانية')">
+      الجزائر الثانية <span class="favorite-btn" onclick="toggleFavorite(event, this)">❤️</span>
+    </div>
+  </div>
+
+  <div class="comments">
+    <textarea id="commentInput" placeholder="💬 اكتب تعليقك..."></textarea>
+    <button onclick="addComment()">نشر</button>
+    <div id="commentList"></div>
+  </div>
+
+  <div class="bottom-nav">
+    <button onclick="alert('Live TV')">📺 Live TV</button>
+    <button onclick="alert('Events')">🎥 Events</button>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("open-sidebar");
     }
-    const material = new THREE.MeshStandardMaterial({ color });
-    player = new THREE.Mesh(geometry, material);
-    player.position.z = -5;
-    player.position.y = 0;
-    player.position.x = 0;
-    scene.add(player);
-  }
 
-  function init(){
-    scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-    renderer = new THREE.WebGLRenderer({canvas: document.getElementById('gameCanvas'), antialias: true});
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    function showNotification(message) {
+      const notif = document.getElementById("notification");
+      notif.textContent = message;
+      notif.classList.add("show");
+      setTimeout(() => notif.classList.remove("show"), 3000);
+    }
 
-    const light = new THREE.PointLight(0xffffff, 1.2, 100);
-    light.position.set(10, 10, 10);
-    scene.add(light);
+    function playStream(url, name) {
+      const player = document.getElementById("player");
+      player.src = url;
+      player.play();
+      showNotification("📺 يتم الآن تشغيل: " + name);
+    }
 
-    const ambient = new THREE.AmbientLight(0x404040);
-    scene.add(ambient);
+    function filterChannels() {
+      const input = document.getElementById("searchInput").value.toLowerCase();
+      const links = document.querySelectorAll(".channel-link");
+      links.forEach(link => {
+        const text = link.textContent.toLowerCase();
+        link.style.display = text.includes(input) ? "block" : "none";
+      });
+    }
 
-    const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(50, 50),
-      new THREE.MeshStandardMaterial({ color: 0x222222, side: THREE.DoubleSide })
-    );
-    ground.rotation.x = Math.PI / 2;
-    ground.position.y = -2;
-    scene.add(ground);
-
-    createModel(selectedModel, ballColor);
-
-    camera.position.z = 7;
-  }
-
-  function createObstacle() {
-    const height = Math.random() * 3 + 1;
-    const geometry = new THREE.BoxGeometry(1, height, 1);
-    const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-    const obstacle = new THREE.Mesh(geometry, material);
-    obstacle.position.z = -5;
-    obstacle.position.x = (Math.random() - 0.5) * 6;
-    obstacle.position.y = 4 + height / 2;
-    scene.add(obstacle);
-    obstacles.push(obstacle);
-  }
-
-  function updateObstacles() {
-    for (let i = obstacles.length - 1; i >= 0; i--) {
-      obstacles[i].position.y -= velocity;
-      if (obstacles[i].position.y < -3) {
-        scene.remove(obstacles[i]);
-        obstacles.splice(i, 1);
-        score++;
-        coins++;
-        updateUI();
-        playSound('coin');
-        if(score % 30 === 0) {
-          nextStage();
-        }
+    function filterCategory(category) {
+      const allLinks = document.querySelectorAll(".channel-link");
+      const allSections = document.querySelectorAll(".section-title");
+      if (category === "all") {
+        allLinks.forEach(el => el.style.display = "block");
+        allSections.forEach(el => el.style.display = "block");
+      } else {
+        allLinks.forEach(el => {
+          el.style.display = el.dataset.category === category ? "block" : "none";
+        });
+        allSections.forEach(el => {
+          el.style.display = el.dataset.category === category ? "block" : "none";
+        });
       }
     }
-  }
 
-  function nextStage() {
-    currentStage++;
-    bgHue = (bgHue + 120) % 360;
-    alert("مرحلة جديدة! " + (currentStage + 1));
-  }
-
-  function checkCollision() {
-    for (let obs of obstacles) {
-      const dx = player.position.x - obs.position.x;
-      const dy = player.position.y - obs.position.y;
-      if (Math.abs(dx) < 0.75 && Math.abs(dy) < obs.geometry.parameters.height / 2 + 0.5) {
-        gameOver();
-        return;
-      }
-    }
-  }
-
-  function gameOver() {
-    gameStarted = false;
-    clearInterval(obstacleTimer);
-    saveScore();
-    overlay.style.display = 'flex';
-    leaderboardDiv.style.display = 'block';
-    updateLeaderboard();
-    alert('انتهت اللعبة! نتيجتك: ' + score);
-  }
-
-  function updateUI(){
-    scoreDisplay.textContent = score;
-    coinsDisplay.textContent = coins;
-    const bestScore = Math.max(score, getBestScore());
-    bestScoreDisplay.textContent = bestScore;
-    totalScoreDisplay.textContent = getTotalScore();
-    totalCoinsDisplay.textContent = getTotalCoins();
-  }
-
-  function getBestScore() {
-    return parseInt(localStorage.getItem('bestScore') || '0');
-  }
-
-  function getTotalScore() {
-    return parseInt(localStorage.getItem('totalScore') || '0');
-  }
-
-  function getTotalCoins() {
-    return parseInt(localStorage.getItem('totalCoins') || '0');
-  }
-
-  function saveScore() {
-    let best = getBestScore();
-    if(score > best) {
-      localStorage.setItem('bestScore', score);
-    }
-    let total = getTotalScore() + score;
-    localStorage.setItem('totalScore', total);
-    let totalC = getTotalCoins() + coins;
-    localStorage.setItem('totalCoins', totalC);
-
-    saveLeaderboardScore(playerName, score);
-  }
-
-  // لوحة الأفضلية
-  function saveLeaderboardScore(name, score) {
-    if (!name) return;
-    let leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
-    leaderboard.push({name, score});
-    leaderboard.sort((a,b) => b.score - a.score);
-    leaderboard = leaderboard.slice(0,5); // أعلى 5 فقط
-    localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
-  }
-
-  function updateLeaderboard() {
-    const leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
-    leaderboardList.innerHTML = '';
-    leaderboard.forEach((entry, index) => {
-      const li = document.createElement('li');
-      li.textContent = `${entry.name}: ${entry.score}`;
-      leaderboardList.appendChild(li);
-    });
-  }
-
-  // متجر شخصيات 3D
-  const characters = [
-    {type:'sphere', color:'#ff3333', name:'الكرة الحمراء', price:0},
-    {type:'cube', color:'#33ff33', name:'المكعب الأخضر', price:20},
-    {type:'cone', color:'#3333ff', name:'المخروط الأزرق', price:30},
-  ];
-
-  function buildStore() {
-    store.innerHTML = '';
-    characters.forEach((char, i) => {
-      const btn = document.createElement('button');
-      btn.textContent = char.name + (char.price > 0 ? ` - ${char.price} عملة` : ' - مجاني');
-      btn.style.color = char.color;
-      if(char.type === selectedModel && char.color === ballColor) {
-        btn.classList.add('active');
-      }
-      btn.onclick = () => {
-        if(char.price > 0 && coins < char.price) {
-          alert('لا توجد لديك عملات كافية!');
-          return;
-        }
-        if(char.price > 0) {
-          coins -= char.price;
-          updateUI();
-        }
-        selectedModel = char.type;
-        ballColor = char.color;
-        createModel(selectedModel, ballColor);
-        Array.from(store.children).forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-      };
-      store.appendChild(btn);
-    });
-  }
-
-  // التحكم بالسحب
-  function onPointerDown(e) {
-    isDragging = true;
-    lastTouchX = e.clientX || e.touches[0].clientX;
-  }
-  function onPointerMove(e) {
-    if(!isDragging) return;
-    const x = e.clientX || e.touches[0].clientX;
-    let delta = (x - lastTouchX) / window.innerWidth * 10;
-    player.position.x += delta;
-    player.position.x = Math.min(Math.max(player.position.x, -3), 3);
-    lastTouchX = x;
-  }
-  function onPointerUp() {
-    isDragging = false;
-  }
-
-  function animate() {
-    if(gameStarted) {
-      updateObstacles();
-      checkCollision();
-
-      bgHue += 0.5;
-      document.body.style.background = `hsl(${bgHue}, 60%, 10%)`;
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
     }
 
-    renderer.render(scene, camera);
-    requestAnimationFrame(animate);
-  }
-
-  function startGame(){
-    const input = document.getElementById('playerName');
-    if(!input.value.trim()) {
-      alert('يرجى إدخال الاسم');
-      return;
+    function toggleFavorite(e, el) {
+      e.stopPropagation();
+      const parent = el.closest(".channel-link");
+      parent.classList.toggle("favorite");
     }
-    playerName = input.value.trim();
-    overlay.style.display = 'none';
-    gameUI.style.display = 'block';
-    store.style.display = 'flex';
-    leaderboardDiv.style.display = 'block';
-    score = 0;
-    coins = 0;
-    currentStage = 0;
-    updateUI();
-    buildStore();
-    createModel(selectedModel, ballColor);
-    obstacles.forEach(o => scene.remove(o));
-    obstacles = [];
-    gameStarted = true;
-    obstacleTimer = setInterval(createObstacle, 1000);
 
-    displayName.textContent = playerName;
-  }
+    function addComment() {
+      const input = document.getElementById("commentInput");
+      const list = document.getElementById("commentList");
+      const div = document.createElement("div");
+      div.className = "comment-box";
+      div.textContent = input.value;
+      list.appendChild(div);
+      input.value = "";
+    }
 
-  window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth/window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  });
-
-  window.addEventListener('mousedown', onPointerDown);
-  window.addEventListener('mousemove', onPointerMove);
-  window.addEventListener('mouseup', onPointerUp);
-  window.addEventListener('touchstart', onPointerDown);
-  window.addEventListener('touchmove', onPointerMove);
-  window.addEventListener('touchend', onPointerUp);
-
-  init();
-  animate();
-</script>
+    function updateViewerCount() {
+      const count = Math.floor(1000 + Math.random() * 1000);
+      document.getElementById("viewerCount").textContent = `👥 ${count} مشاهد`;
+    }
+    setInterval(updateViewerCount, 5000);
+  </script>
 
 </body>
 </html>
